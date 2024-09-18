@@ -139,25 +139,32 @@ Ví dụ:
 ### Cấu trúc thư mục
 
 ```bash
-/lib
-├── /modules
-│   ├── /resident_management
-│   │   ├── models
-│   │   ├── services
-│   │   ├── repositories
-│   │   └── ui
-│   ├── /payment_management
-│   │   ├── models
-│   │   ├── services
-│   │   ├── repositories
-│   │   └── ui
-│   ├── /notification_management
-│   │   ├── models
-│   │   ├── services
-│   │   └── ui
-│   └── /maintenance_management
-│       ├── models
-│       ├── services
-│       ├── repositories
-│       └── ui
+lib/
+├── core/
+│   ├── constants/
+│   ├── utils/
+│   ├── themes/
+│   └── widgets/
+├── features/
+│   ├── authentication/
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   ├── resident_management/
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   ├── fee_management/
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   ├── notifications/ (optional)
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   └── settings/ (optional) 
+│       ├── data/
+│       ├── domain/
+│       └── presentation/
+└── main.dart
 ```
