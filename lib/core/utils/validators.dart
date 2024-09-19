@@ -14,4 +14,18 @@ class Validators {
     }
     return null;
   }
+
+  static String? validateName(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập tên';
+    }
+    return null;
+  }
+
+  static String? validateNumber(String? value) {
+    if (value == null || int.tryParse(value) == null) {
+      return 'Vui lòng nhập số hợp lệ';
+    }
+    return null;
+  }
 }
