@@ -44,6 +44,8 @@ class _RegisterFormState extends State<RegisterForm> {
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Xác nhận mật khẩu'),
                   obscureText: true,
+                  onSaved: (value) => _confirmPassword =
+                      value!, // Lưu giá trị vào biến _confirmPassword
                   validator: (value) {
                     if (value != _password) {
                       return 'Mật khẩu không khớp';
@@ -51,6 +53,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     return null;
                   },
                 ),
+
                 SizedBox(height: 20),
                 // Nút đăng ký
                 ElevatedButton(

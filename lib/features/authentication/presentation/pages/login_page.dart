@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/login_form.dart';
-import '../../../resident_management/presentation/pages/resident_list_page.dart';
 import '../providers/auth_provider.dart';
 
 class LoginPage extends StatelessWidget {

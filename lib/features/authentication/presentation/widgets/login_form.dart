@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../domain/entities/user.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/auth_provider.dart';
-import '../../../resident_management/presentation/pages/resident_list_page.dart';
+import '../../../../../main.dart';
+import '../../../resident_management/presentation/pages/resident_home_page.dart';
+import '../../../resident_management/presentation/pages/admin_home_page.dart';
+import '../../../resident_management/presentation/pages/third_party_home_page.dart';
+import 'change_password_form.dart';
 
 class LoginForm extends StatefulWidget {
   @override
@@ -53,12 +56,18 @@ class _LoginFormState extends State<LoginForm> {
                       try {
                         await authProvider.login(_email, _password);
                         if (authProvider.user != null) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ResidentListPage(),
-                            ),
-                          );
+                          if (authProvider.user!.status == 'pending') {
+                            // Yêu cầu đổi mật khẩu và nhập thông tin cá nhân
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChangePasswordForm(),
+                              ),
+                            );
+                          } else {
+                            // Điều hướng dựa trên vai trò
+                            navigateBasedOnRole(authProvider.user!.role);
+                          }
                         }
                       } catch (e) {
                         setState(() {
@@ -86,5 +95,26 @@ class _LoginFormState extends State<LoginForm> {
               ],
             ),
           );
+  }
+
+  void navigateBasedOnRole(String role) {
+    if (role == 'admin') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AdminHomePage()),
+      );
+    } else if (role == 'resident') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ResidentHomePage()),
+      );
+    } else if (role == 'third_party') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ThirdPartyHomePage()),
+      );
+    } else {
+      // Xử lý trường hợp không xác định
+    }
   }
 }

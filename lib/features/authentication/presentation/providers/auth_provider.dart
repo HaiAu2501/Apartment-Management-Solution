@@ -4,38 +4,47 @@ import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/datasources/auth_remote_data_source.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthProvider with ChangeNotifier {
-  User? _user;
-  User? get user => _user;
+  UserEntity? _user;
+  UserEntity? get user => _user;
 
-  final LoginUseCase loginUseCase;
-  final RegisterUseCase registerUseCase;
+  final AuthRepositoryImpl authRepository;
 
   AuthProvider()
-      : loginUseCase = LoginUseCase(
-          AuthRepositoryImpl(
-            remoteDataSource: AuthRemoteDataSourceImpl(),
-          ),
-        ),
-        registerUseCase = RegisterUseCase(
-          AuthRepositoryImpl(
-            remoteDataSource: AuthRemoteDataSourceImpl(),
+      : authRepository = AuthRepositoryImpl(
+          remoteDataSource: AuthRemoteDataSourceImpl(
+            auth: FirebaseAuth.instance,
+            firestore: FirebaseFirestore.instance,
           ),
         );
 
   Future<void> login(String email, String password) async {
-    _user = await loginUseCase(email, password);
+    _user = await authRepository.login(email, password);
     notifyListeners();
   }
 
   Future<void> register(String email, String password) async {
-    _user = await registerUseCase(email, password);
+    _user = await authRepository.register(email, password);
     notifyListeners();
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await authRepository.logout();
     _user = null;
+    notifyListeners();
+  }
+
+  Future<void> changePassword(String newPassword) async {
+    await authRepository.changePassword(newPassword);
+    notifyListeners();
+  }
+
+  Future<void> getCurrentUser() async {
+    _user = await authRepository.getCurrentUser();
     notifyListeners();
   }
 }
