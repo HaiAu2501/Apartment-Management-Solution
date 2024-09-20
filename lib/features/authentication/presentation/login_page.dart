@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
 import 'register_page.dart';
 import 'home_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:ams/core/utils/extensions.dart';
 
 class LoginPage extends StatefulWidget {
   final AuthenticationService authService;
@@ -15,28 +18,27 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Controllers
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   bool isLoading = false;
-  String? errorMessage;
+  String? message;
 
   Future<void> login() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() {
       isLoading = true;
-      errorMessage = null;
+      message = null;
     });
 
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        errorMessage = 'Vui lòng nhập đầy đủ email và mật khẩu.';
-        isLoading = false;
-      });
-      return;
-    }
 
     try {
       // Đăng nhập người dùng
@@ -45,13 +47,25 @@ class _LoginPageState extends State<LoginPage> {
         // Lấy UID của người dùng
         String? uid = await widget.authService.getUserUid(idToken);
         if (uid != null) {
-          // Lấy vai trò từ Firestore
-          String? role = await widget.authService.getUserRole(uid, idToken);
-          if (role != null) {
-            if (role == 'admin' ||
-                role == 'resident' ||
-                role == 'third_party') {
-              // Chuyển hướng tới trang chủ tương ứng
+          // Kiểm tra xem người dùng đã được phê duyệt chưa
+          final userDocUrl =
+              'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/users/$uid?key=${widget.authService.apiKey}';
+
+          final userResponse = await http.get(
+            Uri.parse(userDocUrl),
+            headers: {
+              'Authorization': 'Bearer $idToken',
+              'Content-Type': 'application/json',
+            },
+          );
+
+          if (userResponse.statusCode == 200) {
+            final userData = jsonDecode(userResponse.body)['fields'];
+            String role = userData['role']['stringValue'];
+            String status = userData['status']['stringValue'];
+
+            if (status == 'approval') {
+              // Tài khoản đã được phê duyệt
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
@@ -64,34 +78,44 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               );
             } else {
+              // Tài khoản chưa được phê duyệt
               setState(() {
-                errorMessage = 'Vai trò không hợp lệ.';
+                message = 'Tài khoản của bạn đang chờ phê duyệt.';
                 isLoading = false;
               });
             }
-          } else {
+          } else if (userResponse.statusCode == 404) {
+            // Tài khoản chưa được phê duyệt (không có trong 'users' collection)
             setState(() {
-              errorMessage = 'Không xác định được vai trò người dùng.';
+              message = 'Tài khoản của bạn đang chờ phê duyệt.';
               isLoading = false;
             });
+          } else {
+            setState(() {
+              message = 'Lỗi khi kiểm tra trạng thái tài khoản.';
+              isLoading = false;
+            });
+            print('Lỗi khi kiểm tra người dùng: ${userResponse.statusCode}');
+            print('Chi tiết lỗi: ${userResponse.body}');
           }
         } else {
           setState(() {
-            errorMessage = 'Không lấy được UID người dùng.';
+            message = 'Không lấy được UID người dùng.';
             isLoading = false;
           });
         }
       } else {
         setState(() {
-          errorMessage = 'Đăng nhập thất bại.';
+          message = 'Đăng nhập thất bại.';
           isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Lỗi: $e';
+        message = 'Lỗi: $e';
         isLoading = false;
       });
+      print('Lỗi khi đăng nhập: $e');
     }
   }
 
@@ -114,46 +138,64 @@ class _LoginPageState extends State<LoginPage> {
           padding: EdgeInsets.all(16.0),
           child: Center(
               child: SingleChildScrollView(
-                  child: Column(
-            children: [
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: passwordController,
-                decoration: InputDecoration(labelText: 'Mật khẩu'),
-                obscureText: true,
-              ),
-              SizedBox(height: 20),
-              if (errorMessage != null)
-                Text(
-                  errorMessage!,
-                  style: TextStyle(color: Colors.red),
+                  child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // Email
+                TextFormField(
+                  controller: emailController,
+                  decoration: InputDecoration(labelText: 'Email'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Vui lòng nhập email.';
+                    }
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                      return 'Email không hợp lệ.';
+                    }
+                    return null;
+                  },
                 ),
-              SizedBox(height: 20),
-              isLoading
-                  ? CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: login,
-                      child: Text('Đăng Nhập'),
-                    ),
-              SizedBox(height: 10),
-              TextButton(
-                onPressed: navigateToRegister,
-                child: Text('Chưa có tài khoản? Đăng ký ngay!'),
-              )
-            ],
+                SizedBox(height: 10),
+                // Mật khẩu
+                TextFormField(
+                  controller: passwordController,
+                  decoration: InputDecoration(labelText: 'Mật khẩu'),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Vui lòng nhập mật khẩu.';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                // Thông báo
+                if (message != null)
+                  Text(
+                    message!,
+                    style: TextStyle(
+                        color: message!.contains('thành công')
+                            ? Colors.green
+                            : Colors.red),
+                  ),
+                SizedBox(height: 20),
+                // Nút Submit
+                isLoading
+                    ? CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: login,
+                        child: Text('Đăng Nhập'),
+                      ),
+                SizedBox(height: 10),
+                // Nút Đăng Ký
+                TextButton(
+                  onPressed: navigateToRegister,
+                  child: Text('Chưa có tài khoản? Đăng ký ngay!'),
+                )
+              ],
+            ),
           ))),
         ));
-  }
-}
-
-// Extension để viết hoa chữ cái đầu
-extension StringCasingExtension on String {
-  String capitalize() {
-    if (this.isEmpty) return this;
-    return this[0].toUpperCase() + this.substring(1);
   }
 }

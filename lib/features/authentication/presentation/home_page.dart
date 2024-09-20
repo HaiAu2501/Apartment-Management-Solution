@@ -24,15 +24,30 @@ class HomePage extends StatelessWidget {
     switch (role) {
       case 'admin':
         welcomeMessage = 'Chào mừng Admin!';
-        homepageContent = Placeholder(); // Trang chủ dành cho Admin
+        homepageContent = ElevatedButton(
+          onPressed: () {
+            // Thêm chức năng dành cho Admin nếu cần
+          },
+          child: Text('Chức Năng Admin'),
+        );
         break;
       case 'resident':
         welcomeMessage = 'Chào mừng Cư dân!';
-        homepageContent = Placeholder(); // Trang chủ dành cho Cư dân
+        homepageContent = ElevatedButton(
+          onPressed: () {
+            // Thêm chức năng dành cho Cư dân nếu cần
+          },
+          child: Text('Chức Năng Cư dân'),
+        );
         break;
       case 'third_party':
         welcomeMessage = 'Chào mừng Bên Thứ 3!';
-        homepageContent = Placeholder(); // Trang chủ dành cho Bên Thứ 3
+        homepageContent = ElevatedButton(
+          onPressed: () {
+            // Thêm chức năng dành cho Bên Thứ 3 nếu cần
+          },
+          child: Text('Chức Năng Bên Thứ 3'),
+        );
         break;
       default:
         welcomeMessage = 'Chào mừng!';
