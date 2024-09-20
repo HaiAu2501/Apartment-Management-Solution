@@ -14,9 +14,11 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   provider: ^6.0.5
-  firebase_auth: ^5.0.0
-  cloud_firestore: ^5.2.0
-  firebase_core: ^3.3.0
+  # firebase_auth: ^5.0.0
+  # cloud_firestore: ^5.2.0
+  # firebase_core: ^3.3.0
+  http: ^1.0.0
+  flutter_secure_storage: ^9.0.0
 
 # List of packages that the project depends on for development
 dev_dependencies:

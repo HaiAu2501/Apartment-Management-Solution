@@ -1,30 +1,29 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'core/theme/app_theme.dart';
-import 'firebase_options.dart';
-import 'features/authentication/presentation/pages/login_page.dart';
-import 'features/authentication/presentation/pages/register_page.dart';
+// lib/main.dart
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+import 'package:flutter/material.dart';
+import 'features/authentication/data/authentication_service.dart';
+import 'features/authentication/presentation/login_page.dart';
+
+void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  // Thay thế bằng API Key và Project ID của bạn
+  final String apiKey = 'AIzaSyBtspfJdmslGCkv5MvWu9gkMYuLNwvfzKU';
+  final String projectId = 'apartment-management-solution';
+
   @override
   Widget build(BuildContext context) {
+    final authService =
+        AuthenticationService(apiKey: apiKey, projectId: projectId);
+
     return MaterialApp(
-      title: 'Ứng Dụng Quản Lý Chung Cư',
-      theme: AppTheme.lightTheme,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => LoginPage(),
-        '/register': (context) => RegisterPage(),
-        // Thêm các route khác nếu cần
-      },
+      title: 'Quản Lý Chung Cư',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: LoginPage(authService: authService),
     );
   }
 }
