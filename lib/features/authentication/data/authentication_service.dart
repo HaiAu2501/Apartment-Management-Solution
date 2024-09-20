@@ -1,6 +1,7 @@
+// lib/features/authentication/data/authentication_service.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../domain/user.dart';
 
 class AuthenticationService {
   final String apiKey;
@@ -86,44 +87,6 @@ class AuthenticationService {
     }
   }
 
-  // Tạo tài liệu người dùng trong Firestore
-  Future<bool> createUserDocument(
-      String idToken, String uid, String email, String role) async {
-    final uri = Uri.https(
-      'firestore.googleapis.com',
-      '/v1/projects/$projectId/databases/(default)/documents/users/$uid',
-      {
-        'updateMask.fieldPaths': ['email', 'role'],
-        'key': apiKey,
-      },
-    );
-
-    final firestoreData = {
-      'fields': {
-        'email': {'stringValue': email},
-        'role': {'stringValue': role}, // 'admin', 'resident', 'third_party'
-      },
-    };
-
-    final response = await http.patch(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $idToken',
-      },
-      body: jsonEncode(firestoreData),
-    );
-
-    if (response.statusCode == 200) {
-      print('Tài liệu người dùng đã được tạo thành công.');
-      return true;
-    } else {
-      print('Lỗi khi tạo tài liệu người dùng: ${response.statusCode}');
-      print('Chi tiết lỗi: ${response.body}');
-      return false;
-    }
-  }
-
   // Lấy vai trò của người dùng từ Firestore
   Future<String?> getUserRole(String uid, String idToken) async {
     final uri = Uri.https(
@@ -157,6 +120,126 @@ class AuthenticationService {
     }
   }
 
-  // Cập nhật vai trò của người dùng trong Firestore (Không cần thiết, bỏ)
-  // Bạn có thể loại bỏ hàm này nếu không cần thiết
+  // Tạo tài liệu người dùng trong Firestore chỉ dành cho Admin
+  Future<bool> createUserDocument(
+      String idToken, String uid, Map<String, dynamic> userData) async {
+    final uri = Uri.https(
+      'firestore.googleapis.com',
+      '/v1/projects/$projectId/databases/(default)/documents/users/$uid',
+      {
+        'key': apiKey,
+      },
+    );
+
+    final firestoreData = {
+      'fields': {
+        'email': {'stringValue': userData['email']},
+        'full_name': {'stringValue': userData['full_name']},
+        'gender': {'stringValue': userData['gender']},
+        'dob': {'timestampValue': userData['dob']},
+        'cccd': {'stringValue': userData['cccd']},
+        'apartment_name': {'stringValue': userData['apartment_name']},
+        'building_name': {'stringValue': userData['building_name']},
+        'floor_number': {'integerValue': userData['floor_number'].toString()},
+        'apartment_number': {
+          'integerValue': userData['apartment_number'].toString()
+        },
+        'status': {'stringValue': 'approval'},
+        'role': {'stringValue': userData['role']},
+      },
+    };
+
+    final response = await http.patch(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      },
+      body: jsonEncode(firestoreData),
+    );
+
+    if (response.statusCode == 200) {
+      print('Tài liệu người dùng đã được tạo thành công.');
+      return true;
+    } else {
+      print('Lỗi khi tạo tài liệu người dùng: ${response.statusCode}');
+      print('Chi tiết lỗi: ${response.body}');
+      return false;
+    }
+  }
+
+  // Xóa tài liệu trong 'queue'
+  Future<bool> deleteQueueDocument(String queueDocName, String idToken) async {
+    final uri = Uri.https(
+      'firestore.googleapis.com',
+      '/v1/projects/$projectId/databases/(default)/documents/queue/$queueDocName',
+      {
+        'key': apiKey,
+      },
+    );
+
+    final response = await http.delete(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $idToken',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print('Tài liệu queue đã bị xóa thành công.');
+      return true;
+    } else {
+      print('Lỗi khi xóa tài liệu queue: ${response.statusCode}');
+      print('Chi tiết lỗi: ${response.body}');
+      return false;
+    }
+  }
+
+  // Tạo tài liệu trong 'queue'
+  Future<bool> createQueueDocument(
+      String idToken, Map<String, dynamic> queueData) async {
+    final uri = Uri.https(
+      'firestore.googleapis.com',
+      '/v1/projects/$projectId/databases/(default)/documents/queue',
+      {
+        'key': apiKey,
+      },
+    );
+
+    final firestoreData = {
+      'fields': {
+        'uid': {'stringValue': queueData['uid']},
+        'full_name': {'stringValue': queueData['full_name']},
+        'gender': {'stringValue': queueData['gender']},
+        'dob': {'timestampValue': queueData['dob']},
+        'cccd': {'stringValue': queueData['cccd']},
+        'apartment_name': {'stringValue': queueData['apartment_name']},
+        'building_name': {'stringValue': queueData['building_name']},
+        'floor_number': {'integerValue': queueData['floor_number'].toString()},
+        'apartment_number': {
+          'integerValue': queueData['apartment_number'].toString()
+        },
+        'status': {'stringValue': 'pending'},
+        'role': {'stringValue': queueData['role']}, // Thêm trường role nếu cần
+      },
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      },
+      body: jsonEncode(firestoreData),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print('Tài liệu queue đã được tạo thành công.');
+      return true;
+    } else {
+      print('Lỗi khi tạo queue: ${response.statusCode}');
+      print('Chi tiết lỗi: ${response.body}');
+      return false;
+    }
+  }
 }
