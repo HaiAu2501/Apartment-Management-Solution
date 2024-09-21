@@ -46,6 +46,7 @@ class _LoginPageState extends State<LoginPage> {
       if (idToken != null) {
         // Lấy UID của người dùng
         String? uid = await widget.authService.getUserUid(idToken);
+        // print('UID: $uid');
         if (uid != null) {
           // Kiểm tra xem người dùng đã được phê duyệt chưa
           final userDocUrl =
@@ -63,6 +64,7 @@ class _LoginPageState extends State<LoginPage> {
             final userData = jsonDecode(userResponse.body)['fields'];
             String role = userData['role']['stringValue'];
             String status = userData['status']['stringValue'];
+            // print('Role: $role');
 
             if (status == 'approval') {
               // Tài khoản đã được phê duyệt

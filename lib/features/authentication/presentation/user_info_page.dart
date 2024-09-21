@@ -57,7 +57,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
   Future<void> fetchMetadata() async {
     try {
       // Giả sử bạn có một document duy nhất trong metadata collection
-      // Document ID: apartment_example
+      // Document ID: EXAMPLE
       final response = await http.get(
         Uri.https(
           'firestore.googleapis.com',

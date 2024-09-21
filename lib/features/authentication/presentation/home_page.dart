@@ -2,6 +2,9 @@
 
 import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
+import '../../admin/presentation/admin_home_page.dart';
+import '../../resident/presentation/resident_home_page.dart';
+import '../../third_party/presentation/third_party_home_page.dart';
 
 class HomePage extends StatelessWidget {
   final String role;
@@ -18,56 +21,41 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String welcomeMessage = '';
-    Widget? homepageContent;
+    Widget homepageContent;
 
     switch (role) {
       case 'admin':
-        welcomeMessage = 'Chào mừng Admin!';
-        homepageContent = ElevatedButton(
-          onPressed: () {
-            // Thêm chức năng dành cho Admin nếu cần
-          },
-          child: Text('Chức Năng Admin'),
+        homepageContent = AdminHomePage(
+          authService: authService,
+          idToken: idToken,
+          uid: uid,
         );
         break;
       case 'resident':
-        welcomeMessage = 'Chào mừng Cư dân!';
-        homepageContent = ElevatedButton(
-          onPressed: () {
-            // Thêm chức năng dành cho Cư dân nếu cần
-          },
-          child: Text('Chức Năng Cư dân'),
+        homepageContent = ResidentHomePage(
+          authService: authService,
+          idToken: idToken,
+          uid: uid,
         );
         break;
       case 'third_party':
-        welcomeMessage = 'Chào mừng Bên Thứ 3!';
-        homepageContent = ElevatedButton(
-          onPressed: () {
-            // Thêm chức năng dành cho Bên Thứ 3 nếu cần
-          },
-          child: Text('Chức Năng Bên Thứ 3'),
+        homepageContent = ThirdPartyHomePage(
+          authService: authService,
+          idToken: idToken,
+          uid: uid,
         );
         break;
       default:
-        welcomeMessage = 'Chào mừng!';
-        homepageContent = Placeholder();
+        homepageContent = Center(
+          child: Text('Vai trò không hợp lệ.'),
+        );
     }
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Trang Chủ'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(welcomeMessage, style: TextStyle(fontSize: 24)),
-            SizedBox(height: 20),
-            homepageContent ?? Container(),
-          ],
-        ),
-      ),
+      body: homepageContent,
     );
   }
 }
