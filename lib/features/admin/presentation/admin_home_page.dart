@@ -1,10 +1,9 @@
-// lib/features/admin/presentation/admin_home_page.dart
-
 import 'package:flutter/material.dart';
 import '../../authentication/data/authentication_service.dart';
 import '../../authentication/presentation/login_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày tháng
 
 class AdminHomePage extends StatefulWidget {
   final AuthenticationService authService;
@@ -23,18 +22,22 @@ class AdminHomePage extends StatefulWidget {
 
 class _AdminHomePageState extends State<AdminHomePage> {
   List<dynamic> queueList = [];
-  List<dynamic> usersList = [];
+  List<dynamic> residentsList = [];
+  List<dynamic> thirdPartiesList = [];
   bool isLoadingQueue = false;
-  bool isLoadingUsers = false;
+  bool isLoadingResidents = false;
+  bool isLoadingThirdParties = false;
   String? message;
 
   @override
   void initState() {
     super.initState();
     fetchQueue();
-    fetchUsers();
+    fetchResidents();
+    fetchThirdParties();
   }
 
+  // Hàm lấy danh sách chờ duyệt
   Future<void> fetchQueue() async {
     setState(() {
       isLoadingQueue = true;
@@ -75,14 +78,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   }
 
-// Hàm lấy danh sách cư dân
-  Future<void> fetchUsers() async {
+  // Hàm lấy danh sách cư dân
+  Future<void> fetchResidents() async {
     setState(() {
-      isLoadingUsers = true;
+      isLoadingResidents = true;
     });
 
     final url =
-        'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/users?key=${widget.authService.apiKey}';
+        'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/residents?key=${widget.authService.apiKey}';
 
     try {
       final response = await http.get(
@@ -95,35 +98,69 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        List<dynamic> fetchedUsers = data['documents'] ?? [];
-
-        // Loại bỏ các tài liệu có role là 'admin'
-        fetchedUsers = fetchedUsers.where((doc) {
-          final fields = doc['fields'];
-          return fields['role']['stringValue'] != 'admin';
-        }).toList();
-
         setState(() {
-          usersList = fetchedUsers;
-          isLoadingUsers = false;
+          residentsList = data['documents'] ?? [];
+          isLoadingResidents = false;
         });
       } else {
         setState(() {
           message = 'Lỗi khi tải danh sách cư dân.';
-          isLoadingUsers = false;
+          isLoadingResidents = false;
         });
-        print('Lỗi khi tải users: ${response.statusCode}');
+        print('Lỗi khi tải residents: ${response.statusCode}');
         print('Chi tiết lỗi: ${response.body}');
       }
     } catch (e) {
       setState(() {
         message = 'Lỗi khi tải danh sách cư dân.';
-        isLoadingUsers = false;
+        isLoadingResidents = false;
       });
-      print('Lỗi khi tải users: $e');
+      print('Lỗi khi tải residents: $e');
     }
   }
 
+  // Hàm lấy danh sách bên thứ 3
+  Future<void> fetchThirdParties() async {
+    setState(() {
+      isLoadingThirdParties = true;
+    });
+
+    final url =
+        'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/thirdParties?key=${widget.authService.apiKey}';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer ${widget.idToken}',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          thirdPartiesList = data['documents'] ?? [];
+          isLoadingThirdParties = false;
+        });
+      } else {
+        setState(() {
+          message = 'Lỗi khi tải danh sách bên thứ 3.';
+          isLoadingThirdParties = false;
+        });
+        print('Lỗi khi tải thirdParties: ${response.statusCode}');
+        print('Chi tiết lỗi: ${response.body}');
+      }
+    } catch (e) {
+      setState(() {
+        message = 'Lỗi khi tải danh sách bên thứ 3.';
+        isLoadingThirdParties = false;
+      });
+      print('Lỗi khi tải thirdParties: $e');
+    }
+  }
+
+  // Hàm phê duyệt người dùng từ queue
   Future<void> approveUser(
       String queueDocName, Map<String, dynamic> queueData) async {
     setState(() {
@@ -131,27 +168,48 @@ class _AdminHomePageState extends State<AdminHomePage> {
     });
 
     try {
-      // Tạo dữ liệu để tạo document trong 'users'
-      Map<String, dynamic> userData = {
-        'email': queueData['email'] ?? 'unknown@example.com', // Nếu cần thiết
-        'full_name': queueData['full_name']['stringValue'],
-        'gender': queueData['gender']['stringValue'],
-        'dob': queueData['dob']['timestampValue'],
-        'cccd': queueData['cccd']['stringValue'],
-        'apartment_name': queueData['apartment_name']['stringValue'],
-        'building_name': queueData['building_name']['stringValue'],
-        'floor_number': int.parse(queueData['floor_number']['integerValue']),
-        'apartment_number':
-            int.parse(queueData['apartment_number']['integerValue']),
-        'status': 'approval',
-        'role': queueData['role'] != null
-            ? queueData['role']['stringValue']
-            : 'resident',
-      };
+      String role = queueData['role']['stringValue'];
+      Map<String, dynamic> targetData = {};
 
-      // Gọi phương thức createUserDocument từ AuthenticationService
-      bool success = await widget.authService.createUserDocument(
-          widget.idToken, queueData['uid']['stringValue'], userData);
+      if (role == 'Cư dân') {
+        targetData = {
+          'fullName': queueData['fullName']['stringValue'],
+          'gender': queueData['gender']['stringValue'],
+          'dob': queueData['dob']['stringValue'], // Định dạng đã là string
+          'phone': queueData['phone']['stringValue'],
+          'id': queueData['id']['stringValue'],
+          'uid': queueData['uid']['stringValue'],
+          'floor': int.parse(queueData['floor']['integerValue']),
+          'apartmentNumber':
+              int.parse(queueData['apartmentNumber']['integerValue']),
+          'email': queueData['email']['stringValue'],
+          'status': 'Đã duyệt', // Đã phê duyệt
+        };
+      } else if (role == 'Bên thứ 3') {
+        targetData = {
+          'fullName': queueData['fullName']['stringValue'],
+          'gender': queueData['gender']['stringValue'],
+          'dob': queueData['dob']['stringValue'], // Định dạng đã là string
+          'phone': queueData['phone']['stringValue'],
+          'id': queueData['id']['stringValue'],
+          'uid': queueData['uid']['stringValue'],
+          'email': queueData['email']['stringValue'],
+          'jobTitle': queueData['jobTitle']['stringValue'],
+          'status': 'Đã duyệt', // Đã phê duyệt
+        };
+      } else {
+        setState(() {
+          message = 'Vai trò không hợp lệ.';
+        });
+        return;
+      }
+
+      // Chọn collection đích dựa trên vai trò
+      String targetCollection = role == 'Cư dân' ? 'residents' : 'thirdParties';
+
+      // Gọi phương thức để tạo document trong collection đích
+      bool success = await widget.authService.createUserDocument(widget.idToken,
+          queueData['uid']['stringValue'], targetData, targetCollection);
 
       if (success) {
         // Xóa tài liệu từ 'queue'
@@ -162,7 +220,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
             message = 'Phê duyệt thành công.';
           });
           fetchQueue();
-          fetchUsers();
+          if (role == 'Cư dân') {
+            fetchResidents();
+          } else {
+            fetchThirdParties();
+          }
         } else {
           setState(() {
             message =
@@ -171,7 +233,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
         }
       } else {
         setState(() {
-          message = 'Phê duyệt thất bại khi tạo tài liệu trong users.';
+          message =
+              'Phê duyệt thất bại khi tạo tài liệu trong $targetCollection.';
         });
       }
     } catch (e) {
@@ -182,10 +245,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   }
 
+  // Hàm logout
   Future<void> logout() async {
-    // Hàm logout nếu bạn cần
-    // Vì đang sử dụng REST API, bạn có thể xóa token từ client
-    // Ví dụ: reset các biến trạng thái và chuyển hướng về LoginPage
+    // Thực hiện logout nếu cần (ví dụ: xóa token, dữ liệu cục bộ)
+    // Sau đó chuyển hướng về trang đăng nhập
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -194,133 +257,213 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
+  // Hàm định dạng ngày sinh
+  String formatDob(String dobString) {
+    try {
+      // Giả sử dobString có định dạng DD/MM/YYYY
+      DateFormat inputFormat = DateFormat('dd/MM/yyyy');
+      DateFormat outputFormat = DateFormat('dd/MM/yyyy');
+      DateTime date = inputFormat.parse(dobString);
+      return outputFormat.format(date);
+    } catch (e) {
+      return dobString; // Nếu không thể định dạng, trả về nguyên bản
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Trang Chủ Admin'),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.logout),
-              onPressed: logout,
-            )
-          ],
-        ),
-        body: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              // Hiển thị thông báo
-              if (message != null)
-                Text(
-                  message!,
-                  style: TextStyle(
-                      color: message!.contains('thành công')
-                          ? Colors.green
-                          : Colors.red),
-                ),
-              SizedBox(height: 20),
-              // Tab để chuyển đổi giữa danh sách chờ và danh sách cư dân
-              Expanded(
-                child: DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      TabBar(
-                        tabs: [
-                          Tab(text: 'Danh Sách Chờ Duyệt'),
-                          Tab(text: 'Danh Sách Cư Dân'),
+      appBar: AppBar(
+        title: Text('Trang Chủ Admin'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: logout,
+            tooltip: 'Đăng xuất',
+          )
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Hiển thị thông báo
+            if (message != null)
+              Text(
+                message!,
+                style: TextStyle(
+                    color: message!.contains('thành công')
+                        ? Colors.green
+                        : Colors.red),
+              ),
+            SizedBox(height: 20),
+            // Tab để chuyển đổi giữa danh sách chờ và danh sách cư dân, bên thứ 3
+            Expanded(
+              child: DefaultTabController(
+                length: 3,
+                child: Column(
+                  children: [
+                    TabBar(
+                      tabs: [
+                        Tab(text: 'Chờ duyệt'),
+                        Tab(text: 'Cư dân'),
+                        Tab(text: 'Bên thứ 3'),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          // Tab 1: Danh Sách Chờ Duyệt
+                          isLoadingQueue
+                              ? Center(child: CircularProgressIndicator())
+                              : queueList.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                          'Không có yêu cầu nào đang chờ duyệt.'))
+                                  : ListView.builder(
+                                      itemCount: queueList.length,
+                                      itemBuilder: (context, index) {
+                                        final doc = queueList[index];
+                                        final fields = doc['fields'];
+                                        return Card(
+                                          child: ListTile(
+                                            title: Text(fields['fullName']
+                                                ['stringValue']),
+                                            subtitle: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                    'Vai trò: ${fields['role']['stringValue']}'),
+                                                Text(
+                                                    'Giới tính: ${fields['gender']['stringValue']}'),
+                                                Text(
+                                                    'Ngày sinh: ${fields['dob']['stringValue']}'), // Sửa đây
+                                                Text(
+                                                    'Số điện thoại: ${fields['phone']['stringValue']}'),
+                                                Text(
+                                                    'Số ID: ${fields['id']['stringValue']}'),
+                                                Text(
+                                                    'Email: ${fields['email']['stringValue']}'),
+                                                if (fields['role']
+                                                        ['stringValue'] ==
+                                                    'Bên thứ 3')
+                                                  Text(
+                                                      'Chức vụ: ${fields['jobTitle']['stringValue']}'),
+                                                if (fields['role']
+                                                        ['stringValue'] ==
+                                                    'Cư dân') ...[
+                                                  Text(
+                                                      'Tầng: ${fields['floor']['integerValue']}'),
+                                                  Text(
+                                                      'Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
+                                                ],
+                                                Text(
+                                                    'Trạng thái: ${fields['status']['stringValue']}'),
+                                              ],
+                                            ),
+                                            trailing: ElevatedButton(
+                                              onPressed: () {
+                                                approveUser(
+                                                    doc['name'], fields);
+                                              },
+                                              child: Text('Phê duyệt'),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+
+                          // Tab 2: Danh Sách Cư Dân
+                          isLoadingResidents
+                              ? Center(child: CircularProgressIndicator())
+                              : residentsList.isEmpty
+                                  ? Center(child: Text('Không có cư dân nào.'))
+                                  : ListView.builder(
+                                      itemCount: residentsList.length,
+                                      itemBuilder: (context, index) {
+                                        final doc = residentsList[index];
+                                        final fields = doc['fields'];
+                                        return Card(
+                                          child: ListTile(
+                                            title: Text(fields['fullName']
+                                                ['stringValue']),
+                                            subtitle: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                    'Giới tính: ${fields['gender']['stringValue']}'),
+                                                Text(
+                                                    'Ngày sinh: ${fields['dob']['stringValue']}'), // Sửa đây
+                                                Text(
+                                                    'Số điện thoại: ${fields['phone']['stringValue']}'),
+                                                Text(
+                                                    'Số ID: ${fields['id']['stringValue']}'),
+                                                Text(
+                                                    'Email: ${fields['email']['stringValue']}'),
+                                                Text(
+                                                    'Tầng: ${fields['floor']['integerValue']}'),
+                                                Text(
+                                                    'Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
+                                                Text(
+                                                    'Trạng thái: ${fields['status']['stringValue']}'),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+
+                          // Tab 3: Danh Sách Bên Thứ 3
+                          isLoadingThirdParties
+                              ? Center(child: CircularProgressIndicator())
+                              : thirdPartiesList.isEmpty
+                                  ? Center(
+                                      child: Text('Không có bên thứ 3 nào.'))
+                                  : ListView.builder(
+                                      itemCount: thirdPartiesList.length,
+                                      itemBuilder: (context, index) {
+                                        final doc = thirdPartiesList[index];
+                                        final fields = doc['fields'];
+                                        return Card(
+                                          child: ListTile(
+                                            title: Text(fields['fullName']
+                                                ['stringValue']),
+                                            subtitle: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                    'Giới tính: ${fields['gender']['stringValue']}'),
+                                                Text(
+                                                    'Ngày sinh: ${fields['dob']['stringValue']}'), // Sửa đây
+                                                Text(
+                                                    'Số điện thoại: ${fields['phone']['stringValue']}'),
+                                                Text(
+                                                    'Số ID: ${fields['id']['stringValue']}'),
+                                                Text(
+                                                    'Email: ${fields['email']['stringValue']}'),
+                                                Text(
+                                                    'Chức vụ: ${fields['jobTitle']['stringValue']}'),
+                                                Text(
+                                                    'Trạng thái: ${fields['status']['stringValue']}'),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
                         ],
                       ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            // Tab 1: Danh Sách Chờ Duyệt
-                            isLoadingQueue
-                                ? Center(child: CircularProgressIndicator())
-                                : ListView.builder(
-                                    itemCount: queueList.length,
-                                    itemBuilder: (context, index) {
-                                      final doc = queueList[index];
-                                      final fields = doc['fields'];
-                                      return Card(
-                                        child: ListTile(
-                                          title: Text(fields['full_name']
-                                              ['stringValue']),
-                                          subtitle: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                  'Giới tính: ${fields['gender']['stringValue']}'),
-                                              Text(
-                                                  'Số CCCD: ${fields['cccd']['stringValue']}'),
-                                              Text(
-                                                  'Chung cư: ${fields['apartment_name']['stringValue']}'),
-                                              Text(
-                                                  'Tòa nhà: ${fields['building_name']['stringValue']}'),
-                                              Text(
-                                                  'Tầng: ${fields['floor_number']['integerValue']}'),
-                                              Text(
-                                                  'Căn hộ: ${fields['apartment_number']['integerValue']}'),
-                                              Text(
-                                                  'Vai trò: ${fields['role']['stringValue']}'),
-                                            ],
-                                          ),
-                                          trailing: ElevatedButton(
-                                            onPressed: () {
-                                              approveUser(
-                                                  doc['name'].split('/').last,
-                                                  fields);
-                                            },
-                                            child: Text('Phê Duyệt'),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-
-                            // Tab 2: Danh Sách Cư Dân
-                            isLoadingUsers
-                                ? Center(child: CircularProgressIndicator())
-                                : ListView.builder(
-                                    itemCount: usersList.length,
-                                    itemBuilder: (context, index) {
-                                      final doc = usersList[index];
-                                      final fields = doc['fields'];
-                                      return Card(
-                                        child: ListTile(
-                                          title: Text(fields['full_name']
-                                              ['stringValue']),
-                                          subtitle: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                  'Chung cư: ${fields['apartment_name']['stringValue']}'),
-                                              Text(
-                                                  'Tòa nhà: ${fields['building_name']['stringValue']}'),
-                                              Text(
-                                                  'Tầng: ${fields['floor_number']['integerValue']}'),
-                                              Text(
-                                                  'Căn hộ: ${fields['apartment_number']['integerValue']}'),
-                                              Text(
-                                                  'Trạng thái: ${fields['status']['stringValue']}'),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
+                    )
+                  ],
                 ),
-              )
-            ],
-          ),
-        ));
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

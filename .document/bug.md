@@ -5,7 +5,7 @@ Bản ghi lỗi được sử dụng để ghi lại các lỗi, vấn đề, ho
 
 ## Phiên bản 0.0-alpha
 
-### 1. Thông tin đăng ký đối với bên thứ 3 
+### 1. Thông tin đăng ký đối với bên thứ 3 ✅
 
 > **Mô tả:** Khi đăng ký tài khoản và người dùng chọn loại tài khoản là bên thứ 3, hệ thống vẫn yêu cầu nhập thông tin gồm tên chung cư, số tầng và số căn hộ. Trong khi đó, bên thứ 3 không cần thông tin này.
 
@@ -19,9 +19,9 @@ Bản ghi lỗi được sử dụng để ghi lại các lỗi, vấn đề, ho
 
 - Tạo collection `residents` để lưu thông tin cư dân, collection `thirdParties` để lưu thông tin bên thứ 3.
 
-- Mỗi document trong collection `residents` chứa các trường thông tin là: `fullName`, `gender`, `dob` (ngày tháng năm sinh), `phone`, `id` (số CCCD/CMND/hộ chiếu), `floor` (tầng), `apartmentNumber` (số căn hộ), `email` và một sub-collection `userFees` chứa thông tin về các khoản phí.
+- Mỗi document trong collection `residents` chứa các trường thông tin là: `fullName`, `gender`, `dob` (ngày tháng năm sinh), `phone`, `id` (số CCCD/CMND/hộ chiếu), `uid` (mã số người dùng trên hệ thống và cũng là khóa của document), `floor` (tầng), `apartmentNumber` (số căn hộ), `email` và một sub-collection `userFees` chứa thông tin về các khoản phí.
 
-- Mỗi document trong collection `thirdParties` chứa các trường thông tin là: `fullName`, `gender`, `dob`, `phone`, `id`, `email`, `jobTitle` (chức vụ, chẳng hạn: bảo vệ, nhân viên vệ sinh, nhân viên kỹ thuật, công an, v.v.).
+- Mỗi document trong collection `thirdParties` chứa các trường thông tin là: `fullName`, `gender`, `dob`, `phone`, `id` (số CCCD/CMND/hộ chiếu), `uid` (mã số người dùng trên hệ thống và cũng là khóa của document), `email`, `jobTitle` (chức vụ, chẳng hạn: bảo vệ, nhân viên vệ sinh, nhân viên kỹ thuật, công an, v.v.).
 
 ### 2. Hai người dùng cùng thông tin cá nhân
 
