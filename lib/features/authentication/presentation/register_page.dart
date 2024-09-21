@@ -1,9 +1,7 @@
-// lib/features/authentication/presentation/register_page.dart
-
 import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
-import 'user_info_page.dart';
-import 'package:ams/core/utils/extensions.dart';
+import 'resident_info_page.dart';
+import 'third_party_info_page.dart';
 
 class RegisterPage extends StatefulWidget {
   final AuthenticationService authService;
@@ -21,12 +19,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  String selectedRole = 'resident'; // Mặc định là resident
+  String selectedRole = 'resident'; // Mặc định là 'Cư dân'
 
   bool isLoading = false;
   String? message;
 
-  Future<void> register() async {
+  Future<void> navigateToInfoPage() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -38,48 +36,38 @@ class _RegisterPageState extends State<RegisterPage> {
 
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
-    String role = selectedRole;
 
     try {
-      // Đăng ký người dùng
-      String? idToken = await widget.authService.signUp(email, password);
-      if (idToken != null) {
-        // Lấy UID của người dùng
-        String? uid = await widget.authService.getUserUid(idToken);
-        if (uid != null) {
-          setState(() {
-            message = 'Đăng ký thành công! Hãy nhập thêm thông tin cá nhân.';
-            isLoading = false;
-          });
-          // Chuyển hướng tới trang nhập thông tin
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => UserInfoPage(
-                authService: widget.authService,
-                idToken: idToken,
-                uid: uid,
-                role: role,
-              ),
+      // Chuyển hướng tới trang nhập thông tin tương ứng mà không tạo tài khoản
+      if (selectedRole == 'resident') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResidentInfoPage(
+              authService: widget.authService,
+              email: email,
+              password: password,
             ),
-          );
-        } else {
-          setState(() {
-            message = 'Không lấy được UID người dùng.';
-            isLoading = false;
-          });
-        }
-      } else {
-        setState(() {
-          message = 'Đăng ký thất bại.';
-          isLoading = false;
-        });
+          ),
+        );
+      } else if (selectedRole == 'thirdParty') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ThirdPartyInfoPage(
+              authService: widget.authService,
+              email: email,
+              password: password,
+            ),
+          ),
+        );
       }
     } catch (e) {
       setState(() {
         message = 'Lỗi: $e';
         isLoading = false;
       });
+      print('Lỗi khi chuyển hướng: $e');
     }
   }
 
@@ -132,11 +120,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 DropdownButtonFormField<String>(
                   value: selectedRole,
                   decoration: InputDecoration(labelText: 'Vai trò'),
-                  items:
-                      <String>['resident', 'third_party'].map((String value) {
+                  items: <String>['resident', 'thirdParty'].map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text(value.capitalize()),
+                      child: Text(value == 'resident' ? 'Cư Dân' : 'Bên Thứ 3'),
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
@@ -166,7 +153,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 isLoading
                     ? CircularProgressIndicator()
                     : ElevatedButton(
-                        onPressed: register,
+                        onPressed: navigateToInfoPage,
                         child: Text('Đăng Ký'),
                       ),
               ],
