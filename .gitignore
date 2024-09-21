@@ -42,3 +42,4 @@ app.*.map.json
 
 # My private folder
 .private/
+.installers/
