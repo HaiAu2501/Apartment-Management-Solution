@@ -244,86 +244,375 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Đăng Nhập'),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: isLoading
-            ? Center(child: CircularProgressIndicator())
-            : Center(
-                child: SingleChildScrollView(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        // Email Field
-                        TextFormField(
-                          controller: emailController,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Vui lòng nhập email';
-                            }
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                .hasMatch(value)) {
-                              return 'Email không hợp lệ';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 20),
-                        // Password Field
-                        TextFormField(
-                          controller: passwordController,
-                          decoration: InputDecoration(
-                            labelText: 'Mật khẩu',
-                            border: OutlineInputBorder(),
-                          ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Vui lòng nhập mật khẩu';
-                            }
-                            if (value.length < 6) {
-                              return 'Mật khẩu phải có ít nhất 6 ký tự';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 20),
-                        // Thông báo lỗi hoặc thành công
-                        if (message != null)
-                          Text(
-                            message!,
-                            style: TextStyle(
-                              color: message!.contains('thành công')
-                                  ? Colors.green
-                                  : Colors.red,
-                            ),
-                          ),
-                        SizedBox(height: 20),
-                        // Nút Đăng Nhập
-                        ElevatedButton(
-                          onPressed: handleLogin,
-                          child: Text('Đăng Nhập'),
-                        ),
-                        SizedBox(height: 10),
-                        // Nút Đăng Ký
-                        TextButton(
-                          onPressed: navigateToRegister,
-                          child: Text('Chưa có tài khoản? Đăng ký ngay!'),
-                        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isMobile = constraints.maxWidth < 600;
+        return Scaffold(
+          body: Stack(
+            children: [
+              // Nền gradient toàn màn hình
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color.fromRGBO(161, 214, 178, 1),
+                      const Color.fromRGBO(241, 243, 194, 1)
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+              ),
+              // Thêm nhiều bong bóng nền hơn
+              Positioned(
+                top: -50,
+                left: -50,
+                child: Container(
+                  width: 250, // đường kính của bubble
+                  height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color.fromRGBO(161, 214, 178, 0.25),
+                        const Color.fromRGBO(241, 243, 194, 0.75)
                       ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
                   ),
                 ),
               ),
+              Positioned(
+                bottom: -100,
+                right: -50,
+                child: Container(
+                  width: 200, // đường kính của bubble
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color.fromRGBO(161, 214, 178, 1),
+                        const Color.fromRGBO(241, 243, 194, 1)
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 120,
+                left: 500,
+                child: Container(
+                  width: 150, // đường kính của bubble
+                  height: 150,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color.fromRGBO(161, 214, 178, 0.75),
+                        const Color.fromRGBO(241, 243, 194, 0.25)
+                      ],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 100,
+                right: 500,
+                child: Container(
+                  width: 300, // đường kính của bubble
+                  height: 300,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color.fromRGBO(161, 214, 178, 0.75),
+                        const Color.fromRGBO(241, 243, 194, 0.25)
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                ),
+              ),
+              // Nội dung chính
+              Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(16),
+                  child: Container(
+                    width: isMobile
+                        ? double.infinity
+                        : 800, // Độ rộng tùy theo thiết bị
+                    padding: EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: isMobile
+                        ? buildLoginForm()
+                        : IntrinsicHeight(
+                            child: Row(
+                              children: [
+                                // Bên trái: Form đăng nhập
+                                Expanded(
+                                  flex: 1,
+                                  child: buildLoginForm(),
+                                ),
+                                SizedBox(width: 32),
+                                // Bên phải: Chào mừng
+                                Expanded(
+                                  flex: 1,
+                                  child: Container(
+                                    padding: EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          const Color.fromARGB(
+                                              255, 119, 198, 122),
+                                          const Color.fromARGB(
+                                              255, 252, 242, 150)
+                                        ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Align(
+                                      alignment:
+                                          Alignment.centerLeft, // Căn lề trái
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Chào mừng',
+                                            style: TextStyle(
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          Text(
+                                            'đến với ứng dụng!',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+              // Hiển thị thông báo khi có lỗi hoặc thông tin
+              if (message != null)
+                Positioned(
+                  top: 50,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: message!.contains('thành công')
+                            ? Colors.green
+                            : Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        message!,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              // Hiển thị loading
+              if (isLoading)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black45,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Hàm xây dựng form đăng nhập
+  Widget buildLoginForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(height: 50),
+          Text(
+            'ĐĂNG NHẬP',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
+          SizedBox(height: 24),
+          TextFormField(
+            controller: emailController,
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.email),
+              labelText: 'Email',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập email';
+              }
+              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                return 'Email không hợp lệ';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: 16),
+          TextFormField(
+            controller: passwordController,
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.lock),
+              labelText: 'Mật khẩu',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            obscureText: true,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập mật khẩu';
+              }
+              if (value.length < 6) {
+                return 'Mật khẩu phải có ít nhất 6 ký tự';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: 5),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                // Xử lý khi nhấn Quên mật khẩu (không có xử lý gì)
+              },
+              child: Text(
+                'Quên mật khẩu?',
+                style: TextStyle(
+                  color: Colors.blue,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 5),
+          // Nút Đăng Nhập với Gradient
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 119, 198, 122),
+                  const Color.fromARGB(255, 252, 242, 150)
+                ],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ElevatedButton(
+              onPressed: handleLogin,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent, // Nền trong suốt
+                shadowColor: Colors.transparent, // Không bóng đổ
+                padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Đăng Nhập',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white, // Chữ màu trắng
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 16),
+          // Nút Đăng Ký với viền gradient và nền trắng
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 119, 198, 122),
+                  const Color.fromARGB(255, 252, 242, 150)
+                ],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(2.0), // Độ dày viền
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white, // Nền trắng
+                  borderRadius: BorderRadius.circular(
+                      6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
+                ),
+                child: TextButton(
+                  onPressed: navigateToRegister,
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white, // Nền trắng
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: Text(
+                    'Đăng Ký',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.green, // Chữ màu xanh lá
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 50),
+        ],
       ),
     );
   }

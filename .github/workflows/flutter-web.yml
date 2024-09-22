@@ -3,6 +3,7 @@ name: Deploy Flutter Web to GitHub Pages
 on:
   push:
     branches:
+      - master
       - main
 
 jobs:
@@ -16,13 +17,21 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.2'
+          flutter-version: '3.24.2' # Thay bằng phiên bản Flutter bạn đang sử dụng
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build web
         run: flutter build web
+
+      - name: Update base href for GitHub Pages
+        run: |
+          sed -i 's|<base href="/">|<base href="/Apartment-Management-Solution/">|' build/web/index.html
+
+      - name: Create 404.html
+        run: |
+          cp build/web/index.html build/web/404.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
