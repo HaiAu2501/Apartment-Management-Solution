@@ -7,7 +7,8 @@ class ThirdPartyHomePage extends StatelessWidget {
   final String idToken;
   final String uid;
 
-  ThirdPartyHomePage({
+  const ThirdPartyHomePage({
+    super.key,
     required this.authService,
     required this.idToken,
     required this.uid,
@@ -29,16 +30,16 @@ class ThirdPartyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trang Chủ Bên Thứ 3'),
+        title: const Text('Trang Chủ Bên Thứ 3'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () => logout(context),
             tooltip: 'Đăng xuất',
           ),
         ],
       ),
-      body: Center(
+      body: const Center(
         child: Text(
           'Chức năng dành cho Bên Thứ 3 sẽ được phát triển sau.',
           style: TextStyle(fontSize: 18),

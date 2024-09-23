@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
 import 'register_page.dart';
-import '../../admin/presentation/admin_home_page.dart';
+import '../../admin/home/home_page.dart';
 import '../../resident/presentation/resident_home_page.dart';
 import '../../third_party/presentation/third_party_home_page.dart';
 import 'package:http/http.dart' as http;
@@ -10,7 +10,7 @@ import 'dart:convert';
 class LoginPage extends StatefulWidget {
   final AuthenticationService authService;
 
-  LoginPage({required this.authService});
+  const LoginPage({super.key, required this.authService});
 
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -246,17 +246,17 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isMobile = constraints.maxWidth < 600;
+        bool isMobile = constraints.maxWidth < 500;
         return Scaffold(
           body: Stack(
             children: [
               // Nền gradient toàn màn hình
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color.fromRGBO(161, 214, 178, 1),
-                      const Color.fromRGBO(241, 243, 194, 1)
+                      Color.fromRGBO(161, 214, 178, 1),
+                      Color.fromRGBO(241, 243, 194, 1)
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
@@ -270,12 +270,12 @@ class _LoginPageState extends State<LoginPage> {
                 child: Container(
                   width: 250, // đường kính của bubble
                   height: 250,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        const Color.fromRGBO(161, 214, 178, 0.25),
-                        const Color.fromRGBO(241, 243, 194, 0.75)
+                        Color.fromRGBO(161, 214, 178, 0.25),
+                        Color.fromRGBO(241, 243, 194, 0.75)
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -289,12 +289,12 @@ class _LoginPageState extends State<LoginPage> {
                 child: Container(
                   width: 200, // đường kính của bubble
                   height: 200,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        const Color.fromRGBO(161, 214, 178, 1),
-                        const Color.fromRGBO(241, 243, 194, 1)
+                        Color.fromRGBO(161, 214, 178, 1),
+                        Color.fromRGBO(241, 243, 194, 1)
                       ],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
@@ -304,16 +304,16 @@ class _LoginPageState extends State<LoginPage> {
               ),
               Positioned(
                 top: 120,
-                left: 500,
+                right: 50,
                 child: Container(
                   width: 150, // đường kính của bubble
                   height: 150,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        const Color.fromRGBO(161, 214, 178, 0.75),
-                        const Color.fromRGBO(241, 243, 194, 0.25)
+                        Color.fromRGBO(161, 214, 178, 0.75),
+                        Color.fromRGBO(241, 243, 194, 0.25)
                       ],
                       begin: Alignment.topRight,
                       end: Alignment.bottomLeft,
@@ -327,12 +327,12 @@ class _LoginPageState extends State<LoginPage> {
                 child: Container(
                   width: 300, // đường kính của bubble
                   height: 300,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        const Color.fromRGBO(161, 214, 178, 0.75),
-                        const Color.fromRGBO(241, 243, 194, 0.25)
+                        Color.fromRGBO(161, 214, 178, 0.75),
+                        Color.fromRGBO(241, 243, 194, 0.25)
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.centerRight,
@@ -343,16 +343,16 @@ class _LoginPageState extends State<LoginPage> {
               // Nội dung chính
               Center(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Container(
                     width: isMobile
                         ? double.infinity
                         : 800, // Độ rộng tùy theo thiết bị
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
                           color: Colors.black26,
                           blurRadius: 10,
@@ -370,26 +370,24 @@ class _LoginPageState extends State<LoginPage> {
                                   flex: 1,
                                   child: buildLoginForm(),
                                 ),
-                                SizedBox(width: 32),
+                                const SizedBox(width: 32),
                                 // Bên phải: Chào mừng
                                 Expanded(
                                   flex: 1,
                                   child: Container(
-                                    padding: EdgeInsets.all(16),
+                                    padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
+                                      gradient: const LinearGradient(
                                         colors: [
-                                          const Color.fromARGB(
-                                              255, 119, 198, 122),
-                                          const Color.fromARGB(
-                                              255, 252, 242, 150)
+                                          Color.fromARGB(255, 119, 198, 122),
+                                          Color.fromARGB(255, 252, 242, 150)
                                         ],
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    child: Align(
+                                    child: const Align(
                                       alignment:
                                           Alignment.centerLeft, // Căn lề trái
                                       child: Column(
@@ -433,8 +431,8 @@ class _LoginPageState extends State<LoginPage> {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
                         color: message!.contains('thành công')
                             ? Colors.green
@@ -443,7 +441,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: Text(
                         message!,
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
@@ -453,7 +451,7 @@ class _LoginPageState extends State<LoginPage> {
                 Positioned.fill(
                   child: Container(
                     color: Colors.black45,
-                    child: Center(
+                    child: const Center(
                       child: CircularProgressIndicator(),
                     ),
                   ),
@@ -472,8 +470,8 @@ class _LoginPageState extends State<LoginPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(height: 50),
-          Text(
+          const SizedBox(height: 50),
+          const Text(
             'ĐĂNG NHẬP',
             style: TextStyle(
               fontSize: 32,
@@ -481,11 +479,11 @@ class _LoginPageState extends State<LoginPage> {
               color: Colors.green,
             ),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           TextFormField(
             controller: emailController,
             decoration: InputDecoration(
-              prefixIcon: Icon(Icons.email),
+              prefixIcon: const Icon(Icons.email),
               labelText: 'Email',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -502,11 +500,11 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           TextFormField(
             controller: passwordController,
             decoration: InputDecoration(
-              prefixIcon: Icon(Icons.lock),
+              prefixIcon: const Icon(Icons.lock),
               labelText: 'Mật khẩu',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -523,14 +521,14 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {
                 // Xử lý khi nhấn Quên mật khẩu (không có xử lý gì)
               },
-              child: Text(
+              child: const Text(
                 'Quên mật khẩu?',
                 style: TextStyle(
                   color: Colors.blue,
@@ -538,15 +536,15 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           // Nút Đăng Nhập với Gradient
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [
-                  const Color.fromARGB(255, 119, 198, 122),
-                  const Color.fromARGB(255, 252, 242, 150)
+                  Color.fromARGB(255, 119, 198, 122),
+                  Color.fromARGB(255, 252, 242, 150)
                 ],
               ),
               borderRadius: BorderRadius.circular(8),
@@ -556,12 +554,12 @@ class _LoginPageState extends State<LoginPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent, // Nền trong suốt
                 shadowColor: Colors.transparent, // Không bóng đổ
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'Đăng Nhập',
                 style: TextStyle(
                   fontSize: 18,
@@ -570,15 +568,15 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           // Nút Đăng Ký với viền gradient và nền trắng
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [
-                  const Color.fromARGB(255, 119, 198, 122),
-                  const Color.fromARGB(255, 252, 242, 150)
+                  Color.fromARGB(255, 119, 198, 122),
+                  Color.fromARGB(255, 252, 242, 150)
                 ],
               ),
               borderRadius: BorderRadius.circular(8),
@@ -595,12 +593,12 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: navigateToRegister,
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.white, // Nền trắng
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Đăng Ký',
                     style: TextStyle(
                       fontSize: 18,
@@ -611,7 +609,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          SizedBox(height: 50),
+          const SizedBox(height: 50),
         ],
       ),
     );

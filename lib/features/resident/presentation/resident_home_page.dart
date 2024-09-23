@@ -7,7 +7,8 @@ class ResidentHomePage extends StatelessWidget {
   final String idToken;
   final String uid;
 
-  ResidentHomePage({
+  const ResidentHomePage({
+    super.key,
     required this.authService,
     required this.idToken,
     required this.uid,
@@ -29,16 +30,16 @@ class ResidentHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trang Chủ Cư Dân'),
+        title: const Text('Trang Chủ Cư Dân'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () => logout(context),
             tooltip: 'Đăng xuất',
           ),
         ],
       ),
-      body: Center(
+      body: const Center(
         child: Text(
           'Chức năng dành cho Cư Dân sẽ được phát triển sau.',
           style: TextStyle(fontSize: 18),

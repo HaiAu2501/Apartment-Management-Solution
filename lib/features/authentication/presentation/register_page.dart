@@ -6,7 +6,7 @@ import 'third_party_info_page.dart';
 class RegisterPage extends StatefulWidget {
   final AuthenticationService authService;
 
-  RegisterPage({required this.authService});
+  const RegisterPage({super.key, required this.authService});
 
   @override
   _RegisterPageState createState() => _RegisterPageState();
@@ -75,10 +75,10 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Đăng Ký'),
+          title: const Text('Đăng Ký'),
         ),
         body: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Center(
               child: SingleChildScrollView(
                   child: Form(
@@ -88,7 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 // Email
                 TextFormField(
                   controller: emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(labelText: 'Email'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Vui lòng nhập email.';
@@ -99,11 +99,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Mật khẩu
                 TextFormField(
                   controller: passwordController,
-                  decoration: InputDecoration(labelText: 'Mật khẩu'),
+                  decoration: const InputDecoration(labelText: 'Mật khẩu'),
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -115,11 +115,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Vai trò
                 DropdownButtonFormField<String>(
                   value: selectedRole,
-                  decoration: InputDecoration(labelText: 'Vai trò'),
+                  decoration: const InputDecoration(labelText: 'Vai trò'),
                   items: <String>['resident', 'thirdParty'].map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -138,7 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Thông báo
                 if (message != null)
                   Text(
@@ -148,13 +148,13 @@ class _RegisterPageState extends State<RegisterPage> {
                             ? Colors.green
                             : Colors.red),
                   ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Nút Submit
                 isLoading
-                    ? CircularProgressIndicator()
+                    ? const CircularProgressIndicator()
                     : ElevatedButton(
                         onPressed: navigateToInfoPage,
-                        child: Text('Đăng Ký'),
+                        child: const Text('Đăng Ký'),
                       ),
               ],
             ),

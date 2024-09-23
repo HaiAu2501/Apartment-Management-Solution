@@ -10,7 +10,8 @@ class ResidentInfoPage extends StatefulWidget {
   final String email;
   final String password;
 
-  ResidentInfoPage({
+  const ResidentInfoPage({
+    super.key,
     required this.authService,
     required this.email,
     required this.password,
@@ -163,17 +164,17 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Nhập Thông Tin Cư Dân'),
+          title: const Text('Nhập Thông Tin Cư Dân'),
           actions: [
             IconButton(
-              icon: Icon(Icons.logout),
+              icon: const Icon(Icons.logout),
               onPressed: logout,
               tooltip: 'Đăng xuất',
             )
           ],
         ),
         body: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
               child: Form(
             key: _formKey,
@@ -182,7 +183,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                 // Họ và Tên
                 TextFormField(
                   controller: fullNameController,
-                  decoration: InputDecoration(labelText: 'Họ và Tên'),
+                  decoration: const InputDecoration(labelText: 'Họ và Tên'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Vui lòng nhập họ và tên.';
@@ -190,11 +191,11 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Giới tính
                 DropdownButtonFormField<String>(
                   value: selectedGender,
-                  decoration: InputDecoration(labelText: 'Giới tính'),
+                  decoration: const InputDecoration(labelText: 'Giới tính'),
                   items: <String>['Nam', 'Nữ', 'Khác'].map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -213,14 +214,14 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Ngày sinh (GestureDetector với TextFormField)
                 GestureDetector(
                   onTap: selectDOB,
                   child: AbsorbPointer(
                     child: TextFormField(
                       controller: dobController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Ngày tháng năm sinh (DD/MM/YYYY)',
                         suffixIcon: Icon(Icons.calendar_today),
                         border: UnderlineInputBorder(),
@@ -234,11 +235,11 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Số điện thoại
                 TextFormField(
                   controller: phoneController,
-                  decoration: InputDecoration(labelText: 'Số điện thoại'),
+                  decoration: const InputDecoration(labelText: 'Số điện thoại'),
                   keyboardType: TextInputType.phone,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -250,12 +251,12 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Số ID
                 TextFormField(
                   controller: idController,
                   decoration:
-                      InputDecoration(labelText: 'Số CCCD/CMND/Hộ chiếu'),
+                      const InputDecoration(labelText: 'Số CCCD/CMND/Hộ chiếu'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Vui lòng nhập số ID.';
@@ -263,11 +264,11 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Tầng
                 TextFormField(
                   controller: floorController,
-                  decoration: InputDecoration(labelText: 'Tầng'),
+                  decoration: const InputDecoration(labelText: 'Tầng'),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -279,11 +280,11 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Số căn hộ
                 TextFormField(
                   controller: apartmentNumberController,
-                  decoration: InputDecoration(labelText: 'Số căn hộ'),
+                  decoration: const InputDecoration(labelText: 'Số căn hộ'),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -295,7 +296,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Thông báo
                 if (message != null)
                   Text(
@@ -305,13 +306,13 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                             ? Colors.green
                             : Colors.red),
                   ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Nút Submit
                 isLoading
-                    ? CircularProgressIndicator()
+                    ? const CircularProgressIndicator()
                     : ElevatedButton(
                         onPressed: submitInfo,
-                        child: Text('Gửi Thông Tin'),
+                        child: const Text('Gửi Thông Tin'),
                       ),
               ],
             ),
