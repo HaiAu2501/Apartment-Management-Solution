@@ -10,7 +10,8 @@ class AdminHomePage extends StatefulWidget {
   final String idToken;
   final String uid;
 
-  AdminHomePage({
+  const AdminHomePage({
+    super.key,
     required this.authService,
     required this.idToken,
     required this.uid,
@@ -274,17 +275,17 @@ class _AdminHomePageState extends State<AdminHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trang Chủ Admin'),
+        title: const Text('Trang Chủ Admin'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: logout,
             tooltip: 'Đăng xuất',
           )
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             // Hiển thị thông báo
@@ -296,14 +297,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         ? Colors.green
                         : Colors.red),
               ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             // Tab để chuyển đổi giữa danh sách chờ và danh sách cư dân, bên thứ 3
             Expanded(
               child: DefaultTabController(
                 length: 3,
                 child: Column(
                   children: [
-                    TabBar(
+                    const TabBar(
                       tabs: [
                         Tab(text: 'Chờ duyệt'),
                         Tab(text: 'Cư dân'),
@@ -315,9 +316,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         children: [
                           // Tab 1: Danh Sách Chờ Duyệt
                           isLoadingQueue
-                              ? Center(child: CircularProgressIndicator())
+                              ? const Center(child: CircularProgressIndicator())
                               : queueList.isEmpty
-                                  ? Center(
+                                  ? const Center(
                                       child: Text(
                                           'Không có yêu cầu nào đang chờ duyệt.'))
                                   : ListView.builder(
@@ -367,7 +368,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                                 approveUser(
                                                     doc['name'], fields);
                                               },
-                                              child: Text('Phê duyệt'),
+                                              child: const Text('Phê duyệt'),
                                             ),
                                           ),
                                         );
@@ -376,9 +377,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
                           // Tab 2: Danh Sách Cư Dân
                           isLoadingResidents
-                              ? Center(child: CircularProgressIndicator())
+                              ? const Center(child: CircularProgressIndicator())
                               : residentsList.isEmpty
-                                  ? Center(child: Text('Không có cư dân nào.'))
+                                  ? const Center(
+                                      child: Text('Không có cư dân nào.'))
                                   : ListView.builder(
                                       itemCount: residentsList.length,
                                       itemBuilder: (context, index) {
@@ -417,9 +419,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
                           // Tab 3: Danh Sách Bên Thứ 3
                           isLoadingThirdParties
-                              ? Center(child: CircularProgressIndicator())
+                              ? const Center(child: CircularProgressIndicator())
                               : thirdPartiesList.isEmpty
-                                  ? Center(
+                                  ? const Center(
                                       child: Text('Không có bên thứ 3 nào.'))
                                   : ListView.builder(
                                       itemCount: thirdPartiesList.length,

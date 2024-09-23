@@ -12,7 +12,8 @@ class HomePage extends StatelessWidget {
   final String uid;
   final AuthenticationService authService;
 
-  HomePage({
+  const HomePage({
+    super.key,
     required this.role,
     required this.idToken,
     required this.uid,
@@ -46,14 +47,14 @@ class HomePage extends StatelessWidget {
         );
         break;
       default:
-        homepageContent = Center(
+        homepageContent = const Center(
           child: Text('Vai trò không hợp lệ.'),
         );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trang Chủ'),
+        title: const Text('Trang Chủ'),
       ),
       body: homepageContent,
     );
