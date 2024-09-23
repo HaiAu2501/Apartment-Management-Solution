@@ -83,7 +83,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   bool get isDesktop => MediaQuery.of(context).size.width >= 650;
 
   // Widget xây dựng Sidebar tùy chỉnh
-  Widget _buildSidebar(double screenWidth) {
+  Widget _buildSidebar(double screenWidth, bool isDesktop) {
     double sidebarWidth = isSidebarExpanded
         ? (screenWidth * 0.3)
             .clamp(150.0, 250.0) // Chiều rộng tối đa 250, tối thiểu 150
@@ -112,12 +112,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
           Expanded(
             child: ListView(
               children: [
-                _buildMenuItem(Icons.home, 'Trang chủ', 0),
-                _buildMenuItem(Icons.dashboard, 'Bảng điều khiển', 1),
-                _buildMenuItem(Icons.person, 'Người dùng', 2),
-                _buildMenuItem(Icons.payment, 'Phí và Tài chính', 3),
-                _buildMenuItem(Icons.event, 'Sự kiện', 4),
-                _buildMenuItem(Icons.logout, 'Đăng xuất', 5),
+                _buildMenuItem(Icons.home, 'Trang chủ', 0, isDesktop),
+                _buildMenuItem(
+                    Icons.dashboard, 'Bảng điều khiển', 1, isDesktop),
+                _buildMenuItem(Icons.person, 'Người dùng', 2, isDesktop),
+                _buildMenuItem(Icons.payment, 'Phí và Tài chính', 3, isDesktop),
+                _buildMenuItem(Icons.event, 'Sự kiện', 4, isDesktop),
+                _buildMenuItem(Icons.logout, 'Đăng xuất', 5, isDesktop),
               ],
             ),
           ),
@@ -127,45 +128,53 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   // Hàm xây dựng một mục menu
-  Widget _buildMenuItem(IconData icon, String title, int index) {
+  Widget _buildMenuItem(
+      IconData icon, String title, int index, bool isDesktop) {
     bool isSelected = _selectedIndex == index;
+    bool showText = isDesktop ? isSidebarExpanded : true;
+
     return GestureDetector(
       onTap: () {
         _onSelectItem(index);
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        padding: isSidebarExpanded
+        padding: showText
             ? const EdgeInsets.symmetric(horizontal: 8, vertical: 12)
-            : const EdgeInsets.all(12), // Đều padding khi thu gọn
+            : const EdgeInsets.all(12), // Đều padding khi thu gọn hoặc mobile
         decoration: isSelected
             ? BoxDecoration(
-                color: Colors.green[100], // Nền xanh lá nhạt khi chọn
-                borderRadius: BorderRadius.circular(8), // Bo góc
+                gradient: LinearGradient(
+                  colors: [
+                    Color.fromRGBO(161, 214, 178, 1),
+                    Color.fromRGBO(241, 243, 194, 1)
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(8),
               )
             : null,
         child: Row(
-          mainAxisAlignment: isSidebarExpanded
-              ? MainAxisAlignment.start
-              : MainAxisAlignment.center,
-          crossAxisAlignment:
-              CrossAxisAlignment.center, // Căn giữa theo trục dọc
+          mainAxisAlignment:
+              showText ? MainAxisAlignment.start : MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: Colors.black, // Màu icon
-              size: 24, // Điều chỉnh kích thước icon nếu cần
+              color: Colors.black,
+              size: 24,
             ),
-            if (isSidebarExpanded) ...[
+            if (showText) ...[
               const SizedBox(width: 16),
               Flexible(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.black, // Màu chữ
+                    color: Colors.black,
                     fontWeight: FontWeight.normal,
                   ),
-                  overflow: TextOverflow.ellipsis, // Tràn dòng nếu quá dài
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -182,7 +191,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
     return Scaffold(
       key: _scaffoldKey, // Thiết lập GlobalKey cho Scaffold
-      drawer: desktop ? null : Drawer(child: _buildSidebar(screenWidth)),
+      drawer:
+          desktop ? null : Drawer(child: _buildSidebar(screenWidth, desktop)),
       appBar: AppBar(
         title: const Text('Trang Chủ Admin'),
         backgroundColor: Colors.grey[850],
@@ -205,7 +215,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
         child: Row(
           children: [
             if (desktop)
-              _buildSidebar(screenWidth), // Hiển thị sidebar luôn trên desktop
+              _buildSidebar(
+                  screenWidth, desktop), // Hiển thị sidebar luôn trên desktop
             Expanded(
               child: _pages[_selectedIndex], // Nội dung chính
             ),
