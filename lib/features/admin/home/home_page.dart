@@ -1,4 +1,6 @@
+// admin/home/home_page.dart
 import 'package:flutter/material.dart';
+import 'package:animated_sidebar/animated_sidebar.dart'; // Import thư viện animated_sidebar
 import '../../authentication/data/authentication_service.dart';
 import '../../authentication/presentation/login_page.dart';
 import '../dashboard/dashboard_page.dart';
@@ -23,26 +25,55 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  // Chỉ số để quản lý trang hiện tại
   int _selectedIndex = 0;
-  bool isSidebarExpanded = true;
 
+  // Danh sách các trang tương ứng với sidebar
   late final List<Widget> _pages;
+
+  // Danh sách các mục trong sidebar
+  final List<SidebarItem> _sidebarItems = [
+    SidebarItem(
+      text: 'Trang chủ',
+      icon: Icons.home_outlined,
+    ),
+    SidebarItem(
+      text: 'Bảng điều khiển',
+      icon: Icons.dashboard_outlined,
+    ),
+    SidebarItem(
+      text: 'Người dùng',
+      icon: Icons.person_outline,
+      // Loại bỏ phần children để UsersPage không có child side_items
+    ),
+    SidebarItem(
+      text: 'Phí và Tài chính',
+      icon: Icons.payment_outlined,
+    ),
+    SidebarItem(
+      text: 'Sự kiện',
+      icon: Icons.event_outlined,
+    ),
+    SidebarItem(
+      text: 'Đăng xuất',
+      icon: Icons.logout_outlined,
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
     _pages = [
-      const EmptyPage(),
-      const DashboardPage(),
+      const EmptyPage(), // 0: Trang chủ trống
+      const DashboardPage(), // 1: Bảng điều khiển
       UsersPage(
         authService: widget.authService,
         idToken: widget.idToken,
         uid: widget.uid,
-      ),
-      const FeesPage(),
-      const EventsPage(),
-      // Đăng xuất được xử lý riêng
+      ), // 2: Người dùng
+      const FeesPage(), // 3: Phí và Tài chính
+      const EventsPage(), // 4: Sự kiện
+      // 5: Đăng xuất sẽ được xử lý riêng
     ];
   }
 
@@ -56,7 +87,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Hàm xử lý khi chọn một mục trong sidebar
+  // Hàm xử lý khi chọn một mục trong sidebar hoặc drawer
   void _onSelectItem(int index) {
     if (index == 5) {
       // Đăng xuất
@@ -65,118 +96,122 @@ class _AdminHomePageState extends State<AdminHomePage> {
       setState(() {
         _selectedIndex = index;
       });
-      if (!isDesktop) {
-        Navigator.of(context).pop(); // Đóng Drawer nếu đang trên mobile
-      }
     }
   }
 
-  // Hàm toggle sidebar
-  void _toggleSidebar() {
-    setState(() {
-      isSidebarExpanded = !isSidebarExpanded;
-    });
-  }
-
-  // Xác định xem hiện tại đang trên desktop hay mobile
-  bool get isDesktop => MediaQuery.of(context).size.width >= 650;
-
-  // Widget xây dựng Sidebar tùy chỉnh
-  Widget _buildSidebar(double screenWidth, bool isDesktop) {
-    double sidebarWidth = isSidebarExpanded
-        ? (screenWidth * 0.3)
-            .clamp(150.0, 250.0) // Chiều rộng tối đa 250, tối thiểu 150
-        : (screenWidth * 0.1).clamp(50.0, 100.0); // Khi thu gọn
-
-    return AnimatedContainer(
+  // Widget cho Sidebar với thiết kế đẹp hơn bằng animated_sidebar
+  Widget _buildAnimatedSidebar() {
+    return AnimatedSidebar(
+      items: _sidebarItems,
+      selectedIndex: _selectedIndex,
+      onItemSelected: _onSelectItem,
+      minSize: 70, // Chiều rộng khi sidebar thu gọn
+      maxSize: 200, // Chiều rộng khi sidebar mở rộng
+      expanded: true, // Khởi tạo sidebar ở trạng thái mở rộng
+      margin: const EdgeInsets.all(16),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      width: sidebarWidth,
-      color: Colors.grey[200],
-      child: Column(
-        children: [
-          // Icon để co lại hoặc mở rộng sidebar (chỉ trên desktop)
-          if (isDesktop)
-            IconButton(
-              icon: Icon(
-                isSidebarExpanded ? Icons.arrow_back : Icons.arrow_forward,
-                color: Colors.black,
-              ),
-              onPressed: _toggleSidebar,
-              tooltip:
-                  isSidebarExpanded ? 'Thu nhỏ Sidebar' : 'Mở rộng Sidebar',
-            ),
-          if (isDesktop) const SizedBox(height: 20),
-          // Các mục menu
-          Expanded(
-            child: ListView(
-              children: [
-                _buildMenuItem(Icons.home, 'Trang chủ', 0, isDesktop),
-                _buildMenuItem(
-                    Icons.dashboard, 'Bảng điều khiển', 1, isDesktop),
-                _buildMenuItem(Icons.person, 'Người dùng', 2, isDesktop),
-                _buildMenuItem(Icons.payment, 'Phí và Tài chính', 3, isDesktop),
-                _buildMenuItem(Icons.event, 'Sự kiện', 4, isDesktop),
-                _buildMenuItem(Icons.logout, 'Đăng xuất', 5, isDesktop),
-              ],
-            ),
+      itemIconSize: 24,
+      itemIconColor: Colors.white,
+      itemTextStyle: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Colors.white,
+      ),
+      itemSpaceBetween: 12,
+      itemSelectedColor: Colors.indigoAccent,
+      itemHoverColor: Colors.indigoAccent.withOpacity(0.3),
+      itemSelectedBorder: BorderRadius.circular(8),
+      itemMargin: 12,
+      switchIconExpanded: Icons.arrow_back_ios_new,
+      switchIconCollapsed: Icons.arrow_forward_ios,
+      frameDecoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(66, 66, 66, 0.75),
+            spreadRadius: 0,
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
         ],
+      ),
+      headerIcon: Icons.admin_panel_settings,
+      headerText: 'QUẢN TRỊ VIÊN',
+      headerIconSize: 28,
+      headerIconColor: Colors.blueAccent,
+      headerTextStyle: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
       ),
     );
   }
 
-  // Hàm xây dựng một mục menu
-  Widget _buildMenuItem(
-      IconData icon, String title, int index, bool isDesktop) {
-    bool isSelected = _selectedIndex == index;
-    bool showText = isDesktop ? isSidebarExpanded : true;
-
-    return GestureDetector(
-      onTap: () {
-        _onSelectItem(index);
-      },
+  Widget _buildDrawer() {
+    return Drawer(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        padding: showText
-            ? const EdgeInsets.symmetric(horizontal: 8, vertical: 12)
-            : const EdgeInsets.all(12), // Đều padding khi thu gọn hoặc mobile
-        decoration: isSelected
-            ? BoxDecoration(
+        color: Colors.white,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color.fromRGBO(161, 214, 178, 1),
-                    Color.fromRGBO(241, 243, 194, 1)
+                    const Color.fromARGB(255, 142, 254, 142),
+                    const Color.fromARGB(255, 255, 250, 152),
                   ],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              )
-            : null,
-        child: Row(
-          mainAxisAlignment:
-              showText ? MainAxisAlignment.start : MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: Colors.black,
-              size: 24,
-            ),
-            if (showText) ...[
-              const SizedBox(width: 16),
-              Flexible(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.normal,
-                  ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ],
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.admin_panel_settings,
+                    size: 40,
+                    color: Colors.grey[850],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'QUẢN TRỊ VIÊN',
+                    style: TextStyle(
+                      color: Color.fromRGBO(0, 0, 0, 1),
+                      fontSize: 24,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ..._sidebarItems.asMap().entries.map((entry) {
+              int index = entry.key;
+              SidebarItem item = entry.value;
+
+              return ListTile(
+                contentPadding: EdgeInsets.symmetric(
+                    horizontal: 25.0, vertical: 4.0), // Tùy chỉnh padding
+                title: Row(
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: Colors.grey[850],
+                      size: 24,
+                    ),
+                    SizedBox(width: 25), // Khoảng cách giữa icon và text
+                    Text(
+                      item.text,
+                      style: const TextStyle(color: Color.fromRGBO(0, 0, 0, 1)),
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.pop(context); // Đóng Drawer
+                  _onSelectItem(index);
+                },
+              );
+            }).toList(),
           ],
         ),
       ),
@@ -185,43 +220,62 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    bool desktop = isDesktop;
-    double screenWidth = MediaQuery.of(context).size.width;
-
-    return Scaffold(
-      key: _scaffoldKey, // Thiết lập GlobalKey cho Scaffold
-      drawer:
-          desktop ? null : Drawer(child: _buildSidebar(screenWidth, desktop)),
-      appBar: AppBar(
-        title: const Text('Trang Chủ Admin'),
-        backgroundColor: Colors.grey[850],
-        leading: desktop
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                tooltip: 'Mở Menu',
-              ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: logout,
-            tooltip: 'Đăng xuất',
-          )
-        ],
-      ),
-      body: SafeArea(
-        child: Row(
-          children: [
-            if (desktop)
-              _buildSidebar(
-                  screenWidth, desktop), // Hiển thị sidebar luôn trên desktop
-            Expanded(
-              child: _pages[_selectedIndex], // Nội dung chính
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Đặt breakpoint ở 600 pixels
+        if (constraints.maxWidth >= 600) {
+          // Desktop layout
+          return Scaffold(
+            body: Row(
+              children: [
+                // Sidebar
+                _buildAnimatedSidebar(),
+                // Nội dung chính
+                Expanded(
+                  child: Scaffold(
+                    appBar: AppBar(
+                      title: const Text('Trang Chủ Admin'),
+                      backgroundColor: Colors.grey[850],
+                      actions: [
+                        IconButton(
+                          icon: const Icon(Icons.logout),
+                          onPressed: logout,
+                          tooltip: 'Đăng xuất',
+                        )
+                      ],
+                    ),
+                    body: _pages[_selectedIndex],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          );
+        } else {
+          // Mobile layout
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Trang Chủ Admin'),
+              backgroundColor: Colors.grey[850],
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  tooltip: 'Menu',
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: logout,
+                  tooltip: 'Đăng xuất',
+                )
+              ],
+            ),
+            drawer: _buildDrawer(),
+            body: _pages[_selectedIndex],
+          );
+        }
+      },
     );
   }
 }
