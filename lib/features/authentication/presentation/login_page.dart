@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
 import 'register_page.dart';
-import '../../admin/presentation/admin_home_page.dart';
+import '../../admin/home/home_page.dart';
 import '../../resident/presentation/resident_home_page.dart';
 import '../../third_party/presentation/third_party_home_page.dart';
 import 'package:http/http.dart' as http;
@@ -246,7 +246,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isMobile = constraints.maxWidth < 600;
+        bool isMobile = constraints.maxWidth < 500;
         return Scaffold(
           body: Stack(
             children: [
@@ -304,7 +304,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               Positioned(
                 top: 120,
-                left: 500,
+                right: 50,
                 child: Container(
                   width: 150, // đường kính của bubble
                   height: 150,

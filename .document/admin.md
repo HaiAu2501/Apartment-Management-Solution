@@ -52,9 +52,9 @@ Nội dung:
 * Hóa đơn và Biên lai: Tạo, chỉnh sửa, và gửi hóa đơn cho cư dân.
 * Dự toán ngân sách: Kế hoạch tài chính cho các kỳ tới.
 
-## 5. Notifications (Thông Báo)
+## 5. Events (Sự Kiện)
 
-## 6. Events (Sự Kiện)
+## 6. Notifications (Thông Báo)
 
 ## 7. Settings (Cài Đặt)
 

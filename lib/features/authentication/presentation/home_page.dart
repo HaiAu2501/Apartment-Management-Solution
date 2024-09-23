@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
-import '../../admin/presentation/admin_home_page.dart';
+import '../../admin/home/home_page.dart';
 import '../../resident/presentation/resident_home_page.dart';
 import '../../third_party/presentation/third_party_home_page.dart';
 
