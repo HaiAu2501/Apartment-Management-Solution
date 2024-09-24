@@ -108,7 +108,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       minSize: 70, // Chiều rộng khi sidebar thu gọn
       maxSize: 200, // Chiều rộng khi sidebar mở rộng
       expanded: true, // Khởi tạo sidebar ở trạng thái mở rộng
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(0),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       itemIconSize: 24,
@@ -127,7 +127,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       switchIconCollapsed: Icons.arrow_forward_ios,
       frameDecoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(0),
         boxShadow: const [
           BoxShadow(
             color: Color.fromRGBO(66, 66, 66, 0.75),

@@ -389,7 +389,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     child: const Align(
                                       alignment:
-                                          Alignment.centerLeft, // Căn lề trái
+                                          Alignment.center, // Căn lề trái
                                       child: Column(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
@@ -531,7 +531,7 @@ class _LoginPageState extends State<LoginPage> {
               child: const Text(
                 'Quên mật khẩu?',
                 style: TextStyle(
-                  color: Colors.blue,
+                  color: Color.fromARGB(255, 119, 198, 122),
                 ),
               ),
             ),
