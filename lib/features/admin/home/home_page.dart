@@ -112,21 +112,21 @@ class _AdminHomePageState extends State<AdminHomePage> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       itemIconSize: 24,
-      itemIconColor: Colors.white,
+      itemIconColor: Colors.black,
       itemTextStyle: const TextStyle(
         fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: Colors.white,
+        fontWeight: FontWeight.w400,
+        color: Colors.black,
       ),
       itemSpaceBetween: 12,
-      itemSelectedColor: Colors.indigoAccent,
-      itemHoverColor: Colors.indigoAccent.withOpacity(0.3),
+      itemSelectedColor: Color.fromRGBO(161, 214, 178, 1),
+      itemHoverColor: Color.fromRGBO(161, 214, 178, 0.25),
       itemSelectedBorder: BorderRadius.circular(8),
       itemMargin: 12,
       switchIconExpanded: Icons.arrow_back_ios_new,
       switchIconCollapsed: Icons.arrow_forward_ios,
       frameDecoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         boxShadow: const [
           BoxShadow(
@@ -140,11 +140,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
       headerIcon: Icons.admin_panel_settings,
       headerText: 'QUẢN TRỊ VIÊN',
       headerIconSize: 28,
-      headerIconColor: Colors.blueAccent,
+      headerIconColor: Colors.redAccent,
       headerTextStyle: const TextStyle(
         fontSize: 15,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
+        fontWeight: FontWeight.w500,
+        color: Colors.redAccent,
       ),
     );
   }
@@ -172,13 +172,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   Icon(
                     Icons.admin_panel_settings,
                     size: 40,
-                    color: Colors.grey[850],
+                    color: Colors.red,
                   ),
                   const SizedBox(height: 10),
                   const Text(
                     'QUẢN TRỊ VIÊN',
                     style: TextStyle(
-                      color: Color.fromRGBO(0, 0, 0, 1),
+                      color: Colors.red,
                       fontSize: 24,
                     ),
                   ),
@@ -235,7 +235,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   child: Scaffold(
                     appBar: AppBar(
                       title: const Text('Trang Chủ Admin'),
-                      backgroundColor: Colors.grey[850],
+                      backgroundColor: Colors.white,
                       actions: [
                         IconButton(
                           icon: const Icon(Icons.logout),
@@ -254,8 +254,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
           // Mobile layout
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Trang Chủ Admin'),
-              backgroundColor: Colors.grey[850],
+              // title: const Text('Trang Chủ Admin'),
+              backgroundColor: Colors.white,
               leading: Builder(
                 builder: (context) => IconButton(
                   icon: const Icon(Icons.menu),
