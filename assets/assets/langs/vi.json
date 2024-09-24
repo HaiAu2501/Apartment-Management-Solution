@@ -1,0 +1,7 @@
+{
+    "_cmt_1": "lib\\features\\authentication\\presentation\\login_page.dart",
+    "login": {
+        "not_found": "Không tìm thấy vai trò của người dùng.",
+        "pending": "Tài khoản của bạn đang trong trạng thái \"Chờ duyệt\". Vui lòng đợi admin phê duyệt."
+    }
+}
