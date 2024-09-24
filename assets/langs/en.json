@@ -1,0 +1,7 @@
+{
+    "_cmt_1": "lib\\features\\authentication\\presentation\\login_page.dart",
+    "login": {
+        "not_found": "Not found user role.",
+        "pending": "Your account is in \"Pending\" status. Please wait for admin approval."
+    }
+}
