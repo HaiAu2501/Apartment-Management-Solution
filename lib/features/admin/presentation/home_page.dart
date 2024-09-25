@@ -1,7 +1,7 @@
 // admin/home/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:animated_sidebar/animated_sidebar.dart'; // Import thư viện animated_sidebar
-import '../../.authentication/data/authentication_service.dart';
+import '../../.authentication/data/auth_service.dart';
 import '../../.authentication/presentation/login_page.dart';
 import 'dashboard_page.dart';
 import 'events_page.dart';

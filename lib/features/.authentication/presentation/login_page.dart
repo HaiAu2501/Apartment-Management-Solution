@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/authentication_service.dart';
+import '../data/auth_service.dart';
 import 'register_page.dart';
 import '../../admin/presentation/home_page.dart';
 import '../../resident/presentation/resident_home_page.dart';

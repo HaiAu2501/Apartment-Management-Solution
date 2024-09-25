@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/authentication_service.dart';
+import '../data/auth_service.dart';
 import 'resident_info_page.dart';
 import 'guest_info_page.dart';
 

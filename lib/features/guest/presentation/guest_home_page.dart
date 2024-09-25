@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../.authentication/data/authentication_service.dart';
+import '../../.authentication/data/auth_service.dart';
 import '../../.authentication/presentation/login_page.dart';
 
 class GuestHomePage extends StatelessWidget {
