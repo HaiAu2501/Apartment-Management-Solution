@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import '../../.authentication/data/authentication_service.dart';
 import '../../.authentication/presentation/login_page.dart';
 
-class ThirdPartyHomePage extends StatelessWidget {
+class GuestHomePage extends StatelessWidget {
   final AuthenticationService authService;
   final String idToken;
   final String uid;
 
-  const ThirdPartyHomePage({
+  const GuestHomePage({
     super.key,
     required this.authService,
     required this.idToken,

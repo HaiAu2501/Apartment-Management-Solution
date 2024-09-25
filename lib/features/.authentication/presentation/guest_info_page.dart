@@ -5,12 +5,12 @@ import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class ThirdPartyInfoPage extends StatefulWidget {
+class GuestInfoPage extends StatefulWidget {
   final AuthenticationService authService;
   final String email;
   final String password;
 
-  const ThirdPartyInfoPage({
+  const GuestInfoPage({
     super.key,
     required this.authService,
     required this.email,
@@ -18,10 +18,10 @@ class ThirdPartyInfoPage extends StatefulWidget {
   });
 
   @override
-  _ThirdPartyInfoPageState createState() => _ThirdPartyInfoPageState();
+  _GuestInfoPageState createState() => _GuestInfoPageState();
 }
 
-class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
+class _GuestInfoPageState extends State<GuestInfoPage> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
@@ -63,8 +63,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
 
     try {
       // Đăng ký người dùng
-      String? idToken =
-          await widget.authService.signUp(widget.email, widget.password);
+      String? idToken = await widget.authService.signUp(widget.email, widget.password);
       if (idToken != null) {
         // Lấy UID của người dùng
         String? uid = await widget.authService.getUserUid(idToken);
@@ -79,26 +78,23 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             'uid': uid,
             'jobTitle': jobTitle,
             'email': widget.email,
-            'role': 'Bên thứ 3',
+            'role': 'Khách',
             'status': 'Chờ duyệt',
           };
 
           // Tạo document trong collection 'queue'
-          bool success =
-              await widget.authService.createQueueDocument(idToken, queueData);
+          bool success = await widget.authService.createQueueDocument(idToken, queueData);
 
           if (success) {
             setState(() {
-              message =
-                  'Đăng ký thông tin thành công. Đang chờ admin phê duyệt.';
+              message = 'Đăng ký thông tin thành công. Đang chờ admin phê duyệt.';
               isLoading = false;
             });
             // Chuyển hướng về trang đăng nhập sau khi thành công
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    LoginPage(authService: widget.authService),
+                builder: (context) => LoginPage(authService: widget.authService),
               ),
             );
           } else {
@@ -168,10 +164,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Color.fromRGBO(161, 214, 178, 1),
-                      Color.fromRGBO(241, 243, 194, 1)
-                    ],
+                    colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
@@ -187,10 +180,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.25),
-                        Color.fromRGBO(241, 243, 194, 0.75)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.25), Color.fromRGBO(241, 243, 194, 0.75)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -206,10 +196,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 1),
-                        Color.fromRGBO(241, 243, 194, 1)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -225,10 +212,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topRight,
                       end: Alignment.bottomLeft,
                     ),
@@ -244,10 +228,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topCenter,
                       end: Alignment.centerRight,
                     ),
@@ -259,9 +240,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    width: isMobile
-                        ? double.infinity
-                        : 800, // Độ rộng tùy theo thiết bị
+                    width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
@@ -292,23 +271,17 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
-                                        colors: [
-                                          Color.fromARGB(255, 119, 198, 122),
-                                          Color.fromARGB(255, 252, 242, 150)
-                                        ],
+                                        colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Align(
-                                      alignment:
-                                          Alignment.center, // Căn lề trái
+                                      alignment: Alignment.center, // Căn lề trái
                                       child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Quý khách',
@@ -345,12 +318,9 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: message!.contains('thành công')
-                            ? Colors.green
-                            : Colors.red,
+                        color: message!.contains('thành công') ? Colors.green : Colors.red,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -385,7 +355,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            'THÔNG TIN BÊN THỨ 3',
+            'THÔNG TIN KHÁCH',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -398,7 +368,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             controller: fullNameController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.person),
-              labelText: 'Họ và Tên',
+              labelText: 'Họ và tên',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -526,10 +496,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
           if (message != null)
             Text(
               message!,
-              style: TextStyle(
-                  color: message!.contains('thành công')
-                      ? Colors.green
-                      : Colors.red),
+              style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
             ),
           const SizedBox(height: 24),
           // Nút Gửi Thông Tin với Gradient
@@ -537,10 +504,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
+                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -569,10 +533,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
+                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -581,8 +542,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white, // Nền trắng
-                  borderRadius: BorderRadius.circular(
-                      6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
+                  borderRadius: BorderRadius.circular(6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
                 ),
                 child: TextButton(
                   onPressed: logout, // Quay lại trang đăng nhập

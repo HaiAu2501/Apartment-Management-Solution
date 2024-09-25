@@ -3,7 +3,7 @@ import '../data/authentication_service.dart';
 import 'register_page.dart';
 import '../../admin/presentation/home_page.dart';
 import '../../resident/presentation/resident_home_page.dart';
-import '../../third_party/presentation/third_party_home_page.dart';
+import '../../guest/presentation/guest_home_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
         // Lấy UID của người dùng
         String? uid = await widget.authService.getUserUid(idToken);
         if (uid != null) {
-          // Kiểm tra vai trò của người dùng trong các collection: admin, residents, thirdParties
+          // Kiểm tra vai trò của người dùng trong các collection: admin, residents, guests
           String? role = await getUserRole(uid, idToken);
 
           if (role == null) {
@@ -95,9 +95,9 @@ class _LoginPageState extends State<LoginPage> {
                 isLoading = false;
               });
             }
-          } else if (role == 'thirdParty') {
+          } else if (role == 'guest') {
             // Kiểm tra trạng thái phê duyệt
-            String? status = await getUserStatus('thirdParties', uid, idToken);
+            String? status = await getUserStatus('guests', uid, idToken);
             if (status == 'Chờ duyệt') {
               setState(() {
                 message = 'Tài khoản của bạn đang trong trạng thái "Chờ duyệt". Vui lòng đợi admin phê duyệt.';
@@ -107,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ThirdPartyHomePage(
+                  builder: (context) => GuestHomePage(
                     authService: widget.authService,
                     idToken: idToken,
                     uid: uid,
@@ -178,18 +178,18 @@ class _LoginPageState extends State<LoginPage> {
         return 'resident';
       }
 
-      // Kiểm tra trong collection 'thirdParties'
-      String thirdPartiesUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/thirdParties/$uid?key=${widget.authService.apiKey}';
-      final thirdPartiesResponse = await http.get(
-        Uri.parse(thirdPartiesUrl),
+      // Kiểm tra trong collection 'guests'
+      String guestsUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/guests/$uid?key=${widget.authService.apiKey}';
+      final guestsResponse = await http.get(
+        Uri.parse(guestsUrl),
         headers: {
           'Authorization': 'Bearer $idToken',
           'Content-Type': 'application/json',
         },
       );
 
-      if (thirdPartiesResponse.statusCode == 200) {
-        return 'thirdParty';
+      if (guestsResponse.statusCode == 200) {
+        return 'guest';
       }
 
       // Nếu không tìm thấy trong bất kỳ collection nào

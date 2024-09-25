@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
 import 'resident_info_page.dart';
-import 'third_party_info_page.dart';
+import 'guest_info_page.dart';
 
 class RegisterPage extends StatefulWidget {
   final AuthenticationService authService;
@@ -50,11 +50,11 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
         );
-      } else if (selectedRole == 'thirdParty') {
+      } else if (selectedRole == 'guest') {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ThirdPartyInfoPage(
+            builder: (context) => GuestInfoPage(
               authService: widget.authService,
               email: email,
               password: password,
@@ -83,10 +83,7 @@ class _RegisterPageState extends State<RegisterPage> {
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Color.fromRGBO(161, 214, 178, 1),
-                      Color.fromRGBO(241, 243, 194, 1)
-                    ],
+                    colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
@@ -102,10 +99,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.25),
-                        Color.fromRGBO(241, 243, 194, 0.75)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.25), Color.fromRGBO(241, 243, 194, 0.75)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -121,10 +115,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 1),
-                        Color.fromRGBO(241, 243, 194, 1)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -140,10 +131,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topRight,
                       end: Alignment.bottomLeft,
                     ),
@@ -159,10 +147,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topCenter,
                       end: Alignment.centerRight,
                     ),
@@ -174,9 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    width: isMobile
-                        ? double.infinity
-                        : 800, // Độ rộng tùy theo thiết bị
+                    width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
@@ -207,23 +190,17 @@ class _RegisterPageState extends State<RegisterPage> {
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
-                                        colors: [
-                                          Color.fromARGB(255, 119, 198, 122),
-                                          Color.fromARGB(255, 252, 242, 150)
-                                        ],
+                                        colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Align(
-                                      alignment:
-                                          Alignment.center, // Căn lề trái
+                                      alignment: Alignment.center, // Căn lề trái
                                       child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Vui lòng',
@@ -260,12 +237,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: message!.contains('thành công')
-                            ? Colors.green
-                            : Colors.red,
+                        color: message!.contains('thành công') ? Colors.green : Colors.red,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -360,10 +334,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            items: <String>['resident', 'thirdParty'].map((String value) {
+            items: <String>['resident', 'guest'].map((String value) {
               return DropdownMenuItem<String>(
                 value: value,
-                child: Text(value == 'resident' ? 'Cư Dân' : 'Bên Thứ 3'),
+                child: Text(value == 'resident' ? 'Cư Dân' : 'Khách'),
               );
             }).toList(),
             onChanged: (String? newValue) {
@@ -384,10 +358,7 @@ class _RegisterPageState extends State<RegisterPage> {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
+                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -402,7 +373,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               child: const Text(
-                'Đăng Ký',
+                'Đăng ký',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white, // Chữ màu trắng
@@ -416,10 +387,7 @@ class _RegisterPageState extends State<RegisterPage> {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
+                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -428,8 +396,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white, // Nền trắng
-                  borderRadius: BorderRadius.circular(
-                      6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
+                  borderRadius: BorderRadius.circular(6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
                 ),
                 child: TextButton(
                   onPressed: () {
@@ -443,7 +410,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   child: const Text(
-                    'Quay lại Đăng Nhập',
+                    'Quay lại đăng nhập',
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.green, // Chữ màu xanh lá
