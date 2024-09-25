@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../authentication/data/authentication_service.dart';
-import '../../authentication/presentation/login_page.dart';
+import '../../.authentication/data/authentication_service.dart';
+import '../../.authentication/presentation/login_page.dart';
 
 class ThirdPartyHomePage extends StatelessWidget {
   final AuthenticationService authService;

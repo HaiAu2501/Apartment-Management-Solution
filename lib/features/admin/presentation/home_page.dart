@@ -1,12 +1,12 @@
 // admin/home/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:animated_sidebar/animated_sidebar.dart'; // Import thư viện animated_sidebar
-import '../../authentication/data/authentication_service.dart';
-import '../../authentication/presentation/login_page.dart';
-import '../dashboard/dashboard_page.dart';
-import '../events/events_page.dart';
-import '../fees/fees_page.dart';
-import '../users/users_page.dart';
+import '../../.authentication/data/authentication_service.dart';
+import '../../.authentication/presentation/login_page.dart';
+import 'dashboard_page.dart';
+import 'events_page.dart';
+import 'fees_page.dart';
+import 'users_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   final AuthenticationService authService;
@@ -190,8 +190,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               SidebarItem item = entry.value;
 
               return ListTile(
-                contentPadding: EdgeInsets.symmetric(
-                    horizontal: 25.0, vertical: 4.0), // Tùy chỉnh padding
+                contentPadding: EdgeInsets.symmetric(horizontal: 25.0, vertical: 4.0), // Tùy chỉnh padding
                 title: Row(
                   children: [
                     Icon(

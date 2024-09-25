@@ -23,7 +23,7 @@ Bản ghi lỗi được sử dụng để ghi lại các lỗi, vấn đề, ho
 
 - Mỗi document trong collection `thirdParties` chứa các trường thông tin là: `fullName`, `gender`, `dob`, `phone`, `id` (số CCCD/CMND/hộ chiếu), `uid` (mã số người dùng trên hệ thống và cũng là khóa của document), `email`, `jobTitle` (chức vụ, chẳng hạn: bảo vệ, nhân viên vệ sinh, nhân viên kỹ thuật, công an, v.v.).
 
-### 2. Hai người dùng cùng thông tin cá nhân
+### 2. Hai người dùng cùng thông tin cá nhân ❎
 
 > **Mô tả:** Có thể tồn tại hai người dùng có thông tin cá nhân giống nhau, nhưng với email khác nhau. 
 
@@ -31,8 +31,20 @@ Bản ghi lỗi được sử dụng để ghi lại các lỗi, vấn đề, ho
 |---------|------------------|-----------------|------------|------------|
 | Tạo tài khoản với thông tin cá nhân giống nhau | Hệ thống không cho phép tạo tài khoản mới | Hệ thống cho phép tạo tài khoản mới | Hệ thống không kiểm tra trùng lặp thông tin cá nhân | Cập nhật hệ thống để kiểm tra trùng lặp thông tin cá nhân khi tạo tài khoản mới |
 
+**Chi tiết giải thích:**
+
+- Đây không phải là lỗi mà là một vấn đề về tính bảo mật và chất lượng dữ liệu.
+
+- Hệ thống chấp nhận việc người dùng cùng thông tin. Nếu có người muốn mạo danh, họ có thể sử dụng thông tin của người khác để đăng ký tài khoản. Khi đó, quản trị viên sẽ là người giải quyết bằng cách xác minh thông tin và lựa chọn phê duyệt hoặc từ chối tài khoản.
+
+### 3. Chuyển về trang đăng nhập ngay sau khi điền thông tin ✅
+
+> **Mô tả:** Sau khi người dùng điền thông tin đăng ký, hệ thống chuyển người dùng về trang đăng nhập thay vì thông báo đăng ký thành công.
+
+| Hành vi | Kết quả mong đợi | Kết quả thực tế | Nguyên nhân | Cách xử lý |
+|---------|------------------|-----------------|------------|------------|
+| Điền thông tin đăng ký và nhấn nút đăng ký | Thông báo đăng ký thành công | Chuyển về trang đăng nhập | Người dùng không biết tài khoản đã được tạo thành công | Hiển thị thông báo đăng ký thành công trước khi chuyển về trang đăng nhập |
+
 **Chi tiết chỉnh sửa:**
 
-- Khi người dùng tạo tài khoản mới, hệ thống kiểm tra trùng lặp thông tin cá nhân (số điện thoại, số CCCD/CMND/hộ chiếu) với các tài khoản đã tồn tại.
-
-- Nếu hệ thống phát hiện trùng lặp thông tin cá nhân, thông báo lỗi và không cho phép tạo tài khoản mới.
+- Hiển thị thông báo đăng ký thành công trên trang nhập liệu và không chuyển về trang đăng nhập ngay lập tức.
