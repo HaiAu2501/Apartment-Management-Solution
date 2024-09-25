@@ -1,30 +1,31 @@
 # Các tính năng của Quản trị viên
 
-## 1. Home (Trang Chủ)
+Sau khi đăng nhập với tư cách Quản trị viên, người dùng sẽ được chuyển hướng đến trang chủ tương ứng của hệ thống. Trên thanh điều hướng, Quản trị viên có thể truy cập vào các mục chính sau:
 
-Mục đích: Cung cấp một cái nhìn tổng quan nhanh về tình hình hiện tại của chung cư.
+## 1. Trang chủ (Home)
 
-Nội dung:
-* Ngày tháng năm hiện tại.
-* Tổng quan chung: 
-  * Số lượng tài khoản: số lượng tài khoản cư dân chính thức & chờ duyệt, số lượng tài khoản bên thứ 3.
-  * Tỷ lệ chiếm dụng: số lượng căn hộ đã được mua/cho thuê so với tổng số căn hộ.
-  * Số yêu cầu chờ xử lý. 
-* Biểu đồ thống kê nhanh: Phí quản lý đã thu, phí chưa thu trong tháng.
-* Thông báo nổi bật: Các thông báo quan trọng hoặc khẩn cấp.
-* Sự kiện sắp tới: Lịch sự kiện ngắn gọn.
+> **Mô tả:** Trang chủ là trang mặc định mà Quản trị viên thấy khi đăng nhập vào hệ thống. Trang chủ cung cấp một cái nhìn tổng quan về tình hình hoạt động của chung cư.
 
-## 2. Dashboard (Bảng Điều Khiển)
+| Danh sách nội dung | Mô tả |
+|-------------------|-------|
+| Ngày tháng năm hiện tại | Hiển thị ngày tháng năm hiện tại. |
+| Tổng quan chung | - Số lượng tài khoản: số lượng tài khoản cư dân chính thức & chờ duyệt, số lượng tài khoản bên thứ 3. <br> - Tỷ lệ chiếm dụng: số lượng căn hộ đã được mua/cho thuê so với tổng số căn hộ. <br> - Số yêu cầu chờ xử lý. |
+| Biểu đồ thống kê nhanh | Phí quản lý đã thu, phí chưa thu trong tháng. |
+| Thông báo nổi bật | Các thông báo quan trọng hoặc khẩn cấp. |
+| Sự kiện sắp tới | Lịch sự kiện ngắn gọn. |
 
-Mục đích: Cung cấp các báo cáo chi tiết và phân tích dữ liệu để hỗ trợ việc ra quyết định.
+## 2. Bảng điều khiển (Dashboard)
 
-Nội dung:
-* Báo cáo tài chính: Thu chi, phí quản lý, phí chưa thu.
-* Thống kê sử dụng dịch vụ: Phòng gym, bể bơi, khu vui chơi, v.v.
-* Báo cáo an ninh: Số lượng sự cố, hoạt động bảo vệ.
-* Biểu đồ và đồ thị: Trực quan hóa dữ liệu bằng biểu đồ thanh, tròn, đường.
+> **Mô tả:** Bảng điều khiển là trang chứa các báo cáo và thống kê chi tiết về các hoạt động trong chung cư.
 
-## 3. Users (Người Dùng)
+| Danh sách nội dung | Mô tả |
+|-------------------|-------|
+| Báo cáo tài chính | - Thu chi, phí quản lý, phí chưa thu. <br> - Tổng số tiền đã thu được. |
+| Thống kê sử dụng dịch vụ | - Phòng gym, bể bơi, khu vui chơi, v.v. |
+| Báo cáo an ninh | - Số lượng sự cố, hoạt động bảo vệ. |
+| Biểu đồ và đồ thị | Trực quan hóa dữ liệu bằng biểu đồ thanh, tròn, đường. |
+
+## 3. Người dùng (Users)
 
 Mục đích: Quản lý tất cả các tài khoản người dùng trong hệ thống.
 

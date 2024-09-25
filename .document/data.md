@@ -9,13 +9,15 @@ Firestore là cơ sở dữ liệu NoSQL dựa trên mô hình collections và d
 
 ### Các collections chính
 
-* users: Chứa thông tin người dùng (admin, cư dân, bên thứ 3).
+* `admin`: Thông tin về người quản trị hệ thống.
 
-* buildings: Chứa thông tin về các tòa nhà.
+* `queue`: Danh sách các yêu cầu đăng ký tài khoản cư dân.
 
-* apartments: Chứa thông tin về các căn hộ trong tòa nhà.
+* `residents`: Thông tin về cư dân.
 
-* residents: Chứa thông tin chi tiết của cư dân.
+* `thirdParties`: Thông tin về bên thứ 3 (nhân viên bảo vệ, nhân viên vệ sinh, v.v.).
+
+* `fees`: Thông tin về các khoản phí (tiền điện, tiền nước, phí quản lý, v.v.).
 
 ### Cấu trúc dữ liệu chi tiết
 

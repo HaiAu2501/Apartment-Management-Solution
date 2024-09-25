@@ -1,31 +1,51 @@
 import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
-import 'resident_info_page.dart';
-import 'third_party_info_page.dart';
+import 'login_page.dart';
+import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày tháng
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class RegisterPage extends StatefulWidget {
+class GuestInfoPage extends StatefulWidget {
   final AuthenticationService authService;
+  final String email;
+  final String password;
 
-  const RegisterPage({super.key, required this.authService});
+  const GuestInfoPage({
+    super.key,
+    required this.authService,
+    required this.email,
+    required this.password,
+  });
 
   @override
-  _RegisterPageState createState() => _RegisterPageState();
+  _GuestInfoPageState createState() => _GuestInfoPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _GuestInfoPageState extends State<GuestInfoPage> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-
-  String selectedRole = 'resident'; // Mặc định là 'Cư dân'
+  final TextEditingController fullNameController = TextEditingController();
+  String selectedGender = 'Nam'; // Mặc định là 'Nam'
+  DateTime? dob;
+  final TextEditingController dobController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController idController = TextEditingController();
+  final TextEditingController jobTitleController = TextEditingController();
 
   bool isLoading = false;
   String? message;
 
-  Future<void> navigateToInfoPage() async {
+  // Hàm xử lý đăng ký và tạo tài liệu trong queue
+  Future<void> submitInfo() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (dob == null) {
+      setState(() {
+        message = 'Vui lòng chọn ngày sinh.';
+      });
       return;
     }
 
@@ -34,41 +54,102 @@ class _RegisterPageState extends State<RegisterPage> {
       message = null;
     });
 
-    String email = emailController.text.trim();
-    String password = passwordController.text.trim();
+    String fullName = fullNameController.text.trim();
+    String gender = selectedGender;
+    String dobFormatted = DateFormat('dd/MM/yyyy').format(dob!);
+    String phone = phoneController.text.trim();
+    String id = idController.text.trim();
+    String jobTitle = jobTitleController.text.trim();
 
     try {
-      // Chuyển hướng tới trang nhập thông tin tương ứng mà không tạo tài khoản
-      if (selectedRole == 'resident') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ResidentInfoPage(
-              authService: widget.authService,
-              email: email,
-              password: password,
-            ),
-          ),
-        );
-      } else if (selectedRole == 'thirdParty') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ThirdPartyInfoPage(
-              authService: widget.authService,
-              email: email,
-              password: password,
-            ),
-          ),
-        );
+      // Đăng ký người dùng
+      String? idToken = await widget.authService.signUp(widget.email, widget.password);
+      if (idToken != null) {
+        // Lấy UID của người dùng
+        String? uid = await widget.authService.getUserUid(idToken);
+        if (uid != null) {
+          // Tạo dữ liệu để gửi lên queue
+          Map<String, dynamic> queueData = {
+            'fullName': fullName,
+            'gender': gender,
+            'dob': dobFormatted, // Định dạng: DD/MM/YYYY
+            'phone': phone,
+            'id': id,
+            'uid': uid,
+            'jobTitle': jobTitle,
+            'email': widget.email,
+            'role': 'Khách',
+            'status': 'Chờ duyệt',
+          };
+
+          // Tạo document trong collection 'queue'
+          bool success = await widget.authService.createQueueDocument(idToken, queueData);
+
+          if (success) {
+            setState(() {
+              message = 'Đăng ký thông tin thành công. Đang chờ admin phê duyệt.';
+              isLoading = false;
+            });
+            // Chuyển hướng về trang đăng nhập sau khi thành công
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LoginPage(authService: widget.authService),
+              ),
+            );
+          } else {
+            setState(() {
+              message = 'Đăng ký thông tin thất bại.';
+              isLoading = false;
+            });
+          }
+        } else {
+          setState(() {
+            message = 'Không lấy được UID người dùng.';
+            isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          message = 'Đăng ký thất bại.';
+          isLoading = false;
+        });
       }
     } catch (e) {
       setState(() {
         message = 'Lỗi: $e';
         isLoading = false;
       });
-      print('Lỗi khi chuyển hướng: $e');
+      print('Lỗi khi đăng ký: $e');
     }
+  }
+
+  // Hàm chọn ngày sinh
+  Future<void> selectDOB() async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000, 1),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null) {
+      setState(() {
+        dob = pickedDate;
+        dobController.text = DateFormat('dd/MM/yyyy').format(pickedDate);
+      });
+    }
+  }
+
+  // Hàm logout
+  Future<void> logout() async {
+    // Thực hiện logout nếu cần (ví dụ: xóa token, dữ liệu cục bộ)
+    // Sau đó chuyển hướng về trang đăng nhập
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginPage(authService: widget.authService),
+      ),
+    );
   }
 
   @override
@@ -83,10 +164,7 @@ class _RegisterPageState extends State<RegisterPage> {
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Color.fromRGBO(161, 214, 178, 1),
-                      Color.fromRGBO(241, 243, 194, 1)
-                    ],
+                    colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
@@ -102,10 +180,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.25),
-                        Color.fromRGBO(241, 243, 194, 0.75)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.25), Color.fromRGBO(241, 243, 194, 0.75)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -121,10 +196,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 1),
-                        Color.fromRGBO(241, 243, 194, 1)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -140,10 +212,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topRight,
                       end: Alignment.bottomLeft,
                     ),
@@ -159,10 +228,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topCenter,
                       end: Alignment.centerRight,
                     ),
@@ -174,9 +240,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    width: isMobile
-                        ? double.infinity
-                        : 800, // Độ rộng tùy theo thiết bị
+                    width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
@@ -190,14 +254,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       ],
                     ),
                     child: isMobile
-                        ? buildRegisterForm()
+                        ? buildInfoForm()
                         : IntrinsicHeight(
                             child: Row(
                               children: [
-                                // Bên trái: Form đăng ký
+                                // Bên trái: Form nhập thông tin bên thứ 3
                                 Expanded(
                                   flex: 1,
-                                  child: buildRegisterForm(),
+                                  child: buildInfoForm(),
                                 ),
                                 const SizedBox(width: 32),
                                 // Bên phải: Chào mừng
@@ -207,26 +271,20 @@ class _RegisterPageState extends State<RegisterPage> {
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
-                                        colors: [
-                                          Color.fromARGB(255, 119, 198, 122),
-                                          Color.fromARGB(255, 252, 242, 150)
-                                        ],
+                                        colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Align(
-                                      alignment:
-                                          Alignment.center, // Căn lề trái
+                                      alignment: Alignment.center, // Căn lề trái
                                       child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Vui lòng',
+                                            'Quý khách',
                                             style: TextStyle(
                                               fontSize: 32,
                                               fontWeight: FontWeight.bold,
@@ -234,7 +292,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                             ),
                                           ),
                                           Text(
-                                            'nhập thông tin đăng ký!',
+                                            'vui lòng nhập thông tin!',
                                             style: TextStyle(
                                               fontSize: 24,
                                               fontWeight: FontWeight.bold,
@@ -260,12 +318,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: message!.contains('thành công')
-                            ? Colors.green
-                            : Colors.red,
+                        color: message!.contains('thành công') ? Colors.green : Colors.red,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -292,107 +347,169 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // Hàm xây dựng form đăng ký
-  Widget buildRegisterForm() {
+  // Hàm xây dựng form nhập thông tin bên thứ 3
+  Widget buildInfoForm() {
     return Form(
       key: _formKey,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 50),
           const Text(
-            'ĐĂNG KÝ',
+            'THÔNG TIN KHÁCH',
             style: TextStyle(
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
               color: Colors.green,
             ),
           ),
           const SizedBox(height: 24),
+          // Họ và Tên
           TextFormField(
-            controller: emailController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.email),
-              labelText: 'Email',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng nhập email';
-              }
-              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                return 'Email không hợp lệ';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: passwordController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.lock),
-              labelText: 'Mật khẩu',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            obscureText: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng nhập mật khẩu';
-              }
-              if (value.length < 6) {
-                return 'Mật khẩu phải có ít nhất 6 ký tự';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: selectedRole,
+            controller: fullNameController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.person),
-              labelText: 'Vai trò',
+              labelText: 'Họ và tên',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            items: <String>['resident', 'thirdParty'].map((String value) {
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập họ và tên.';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          // Giới tính
+          DropdownButtonFormField<String>(
+            value: selectedGender,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.transgender),
+              labelText: 'Giới tính',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            items: <String>['Nam', 'Nữ', 'Khác'].map((String value) {
               return DropdownMenuItem<String>(
                 value: value,
-                child: Text(value == 'resident' ? 'Cư Dân' : 'Bên Thứ 3'),
+                child: Text(value),
               );
             }).toList(),
             onChanged: (String? newValue) {
               setState(() {
-                selectedRole = newValue!;
+                selectedGender = newValue!;
               });
             },
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Vui lòng chọn vai trò.';
+                return 'Vui lòng chọn giới tính.';
               }
               return null;
             },
           ),
-          const SizedBox(height: 20),
-          // Nút Đăng Ký với Gradient
+          const SizedBox(height: 16),
+          // Ngày sinh (GestureDetector với TextFormField)
+          GestureDetector(
+            onTap: selectDOB,
+            child: AbsorbPointer(
+              child: TextFormField(
+                controller: dobController,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.calendar_today),
+                  labelText: 'Ngày tháng năm sinh (DD/MM/YYYY)',
+                  suffixIcon: const Icon(Icons.calendar_today),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                validator: (value) {
+                  if (dob == null) {
+                    return 'Vui lòng chọn ngày sinh.';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Số điện thoại
+          TextFormField(
+            controller: phoneController,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.phone),
+              labelText: 'Số điện thoại',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            keyboardType: TextInputType.phone,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập số điện thoại.';
+              }
+              if (!RegExp(r'^[0-9]{10,15}$').hasMatch(value)) {
+                return 'Số điện thoại không hợp lệ.';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          // Số ID
+          TextFormField(
+            controller: idController,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.card_membership),
+              labelText: 'Số CCCD/CMND/Hộ chiếu',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập số ID.';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          // Chức vụ
+          TextFormField(
+            controller: jobTitleController,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.work),
+              labelText: 'Chức vụ',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập chức vụ.';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          // Thông báo
+          if (message != null)
+            Text(
+              message!,
+              style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
+            ),
+          const SizedBox(height: 24),
+          // Nút Gửi Thông Tin với Gradient
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
+                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
               ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: ElevatedButton(
-              onPressed: navigateToInfoPage,
+              onPressed: submitInfo,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent, // Nền trong suốt
                 shadowColor: Colors.transparent, // Không bóng đổ
@@ -402,7 +519,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               child: const Text(
-                'Đăng Ký',
+                'Gửi Thông Tin',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white, // Chữ màu trắng
@@ -416,10 +533,7 @@ class _RegisterPageState extends State<RegisterPage> {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
+                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -428,13 +542,10 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white, // Nền trắng
-                  borderRadius: BorderRadius.circular(
-                      6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
+                  borderRadius: BorderRadius.circular(6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
                 ),
                 child: TextButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Quay lại trang đăng nhập
-                  },
+                  onPressed: logout, // Quay lại trang đăng nhập
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.white, // Nền trắng
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -453,7 +564,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
-          const SizedBox(height: 50),
         ],
       ),
     );

@@ -5,12 +5,12 @@ import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class ThirdPartyInfoPage extends StatefulWidget {
+class ResidentInfoPage extends StatefulWidget {
   final AuthenticationService authService;
   final String email;
   final String password;
 
-  const ThirdPartyInfoPage({
+  const ResidentInfoPage({
     super.key,
     required this.authService,
     required this.email,
@@ -18,10 +18,10 @@ class ThirdPartyInfoPage extends StatefulWidget {
   });
 
   @override
-  _ThirdPartyInfoPageState createState() => _ThirdPartyInfoPageState();
+  _ResidentInfoPageState createState() => _ResidentInfoPageState();
 }
 
-class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
+class _ResidentInfoPageState extends State<ResidentInfoPage> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
@@ -31,16 +31,15 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
   final TextEditingController dobController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController idController = TextEditingController();
-  final TextEditingController jobTitleController = TextEditingController();
+  final TextEditingController floorController = TextEditingController();
+  final TextEditingController apartmentNumberController = TextEditingController();
 
   bool isLoading = false;
   String? message;
 
   // Hàm xử lý đăng ký và tạo tài liệu trong queue
   Future<void> submitInfo() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     if (dob == null) {
       setState(() {
@@ -59,12 +58,12 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
     String dobFormatted = DateFormat('dd/MM/yyyy').format(dob!);
     String phone = phoneController.text.trim();
     String id = idController.text.trim();
-    String jobTitle = jobTitleController.text.trim();
+    String floor = floorController.text.trim();
+    String apartmentNumber = apartmentNumberController.text.trim();
 
     try {
       // Đăng ký người dùng
-      String? idToken =
-          await widget.authService.signUp(widget.email, widget.password);
+      String? idToken = await widget.authService.signUp(widget.email, widget.password);
       if (idToken != null) {
         // Lấy UID của người dùng
         String? uid = await widget.authService.getUserUid(idToken);
@@ -77,30 +76,29 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             'phone': phone,
             'id': id,
             'uid': uid,
-            'jobTitle': jobTitle,
+            'floor': int.parse(floor),
+            'apartmentNumber': int.parse(apartmentNumber),
             'email': widget.email,
-            'role': 'Bên thứ 3',
+            'role': 'Cư dân',
             'status': 'Chờ duyệt',
           };
 
           // Tạo document trong collection 'queue'
-          bool success =
-              await widget.authService.createQueueDocument(idToken, queueData);
+          bool success = await widget.authService.createQueueDocument(idToken, queueData);
 
           if (success) {
             setState(() {
-              message =
-                  'Đăng ký thông tin thành công. Đang chờ admin phê duyệt.';
+              message = 'Đăng ký thông tin thành công. Đang chờ admin phê duyệt.';
               isLoading = false;
             });
             // Chuyển hướng về trang đăng nhập sau khi thành công
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    LoginPage(authService: widget.authService),
-              ),
-            );
+            // Navigator.pushReplacement(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) =>
+            //         LoginPage(authService: widget.authService),
+            //   ),
+            // );
           } else {
             setState(() {
               message = 'Đăng ký thông tin thất bại.';
@@ -148,12 +146,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
   Future<void> logout() async {
     // Thực hiện logout nếu cần (ví dụ: xóa token, dữ liệu cục bộ)
     // Sau đó chuyển hướng về trang đăng nhập
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LoginPage(authService: widget.authService),
-      ),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage(authService: widget.authService)));
   }
 
   @override
@@ -168,10 +161,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Color.fromRGBO(161, 214, 178, 1),
-                      Color.fromRGBO(241, 243, 194, 1)
-                    ],
+                    colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
@@ -187,10 +177,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.25),
-                        Color.fromRGBO(241, 243, 194, 0.75)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.25), Color.fromRGBO(241, 243, 194, 0.75)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -206,10 +193,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 1),
-                        Color.fromRGBO(241, 243, 194, 1)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -225,10 +209,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topRight,
                       end: Alignment.bottomLeft,
                     ),
@@ -244,10 +225,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topCenter,
                       end: Alignment.centerRight,
                     ),
@@ -259,9 +237,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    width: isMobile
-                        ? double.infinity
-                        : 800, // Độ rộng tùy theo thiết bị
+                    width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
@@ -275,14 +251,14 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                       ],
                     ),
                     child: isMobile
-                        ? buildInfoForm()
+                        ? buildRegisterForm()
                         : IntrinsicHeight(
                             child: Row(
                               children: [
-                                // Bên trái: Form nhập thông tin bên thứ 3
+                                // Bên trái: Form nhập thông tin cư dân
                                 Expanded(
                                   flex: 1,
-                                  child: buildInfoForm(),
+                                  child: buildRegisterForm(),
                                 ),
                                 const SizedBox(width: 32),
                                 // Bên phải: Chào mừng
@@ -292,39 +268,25 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
-                                        colors: [
-                                          Color.fromARGB(255, 119, 198, 122),
-                                          Color.fromARGB(255, 252, 242, 150)
-                                        ],
+                                        colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Align(
-                                      alignment:
-                                          Alignment.center, // Căn lề trái
+                                      alignment: Alignment.center, // Căn lề trái
                                       child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Quý khách',
-                                            style: TextStyle(
-                                              fontSize: 32,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
+                                            'Quý cư dân',
+                                            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
                                           ),
                                           Text(
                                             'vui lòng nhập thông tin!',
-                                            style: TextStyle(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
+                                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                                           ),
                                         ],
                                       ),
@@ -345,18 +307,9 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: message!.contains('thành công')
-                            ? Colors.green
-                            : Colors.red,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        message!,
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(color: message!.contains('thành công') ? Colors.green : Colors.red, borderRadius: BorderRadius.circular(8)),
+                      child: Text(message!, style: const TextStyle(color: Colors.white)),
                     ),
                   ),
                 ),
@@ -365,9 +318,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                 Positioned.fill(
                   child: Container(
                     color: Colors.black45,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                    child: const Center(child: CircularProgressIndicator()),
                   ),
                 ),
             ],
@@ -377,20 +328,16 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
     );
   }
 
-  // Hàm xây dựng form nhập thông tin bên thứ 3
-  Widget buildInfoForm() {
+  // Hàm xây dựng form đăng ký
+  Widget buildRegisterForm() {
     return Form(
       key: _formKey,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            'THÔNG TIN BÊN THỨ 3',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.green,
-            ),
+            'THÔNG TIN CƯ DÂN',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green),
           ),
           const SizedBox(height: 24),
           // Họ và Tên
@@ -399,9 +346,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.person),
               labelText: 'Họ và Tên',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -417,15 +362,10 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.transgender),
               labelText: 'Giới tính',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
             items: <String>['Nam', 'Nữ', 'Khác'].map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
+              return DropdownMenuItem<String>(value: value, child: Text(value));
             }).toList(),
             onChanged: (String? newValue) {
               setState(() {
@@ -450,9 +390,7 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
                   prefixIcon: const Icon(Icons.calendar_today),
                   labelText: 'Ngày tháng năm sinh (DD/MM/YYYY)',
                   suffixIcon: const Icon(Icons.calendar_today),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 validator: (value) {
                   if (dob == null) {
@@ -470,18 +408,12 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.phone),
               labelText: 'Số điện thoại',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
             keyboardType: TextInputType.phone,
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng nhập số điện thoại.';
-              }
-              if (!RegExp(r'^[0-9]{10,15}$').hasMatch(value)) {
-                return 'Số điện thoại không hợp lệ.';
-              }
+              if (value == null || value.isEmpty) return 'Vui lòng nhập số điện thoại.';
+              if (!RegExp(r'^[0-9]{10,15}$').hasMatch(value)) return 'Số điện thoại không hợp lệ.';
               return null;
             },
           ),
@@ -492,32 +424,42 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.card_membership),
               labelText: 'Số CCCD/CMND/Hộ chiếu',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng nhập số ID.';
-              }
+              if (value == null || value.isEmpty) return 'Vui lòng nhập số ID.';
               return null;
             },
           ),
           const SizedBox(height: 16),
-          // Chức vụ
+          // Tầng
           TextFormField(
-            controller: jobTitleController,
+            controller: floorController,
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.work),
-              labelText: 'Chức vụ',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              prefixIcon: const Icon(Icons.layers),
+              labelText: 'Tầng',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
+            keyboardType: TextInputType.number,
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng nhập chức vụ.';
-              }
+              if (value == null || value.isEmpty) return 'Vui lòng nhập tầng.';
+              if (int.tryParse(value) == null) return 'Tầng phải là số.';
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          // Số căn hộ
+          TextFormField(
+            controller: apartmentNumberController,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.home),
+              labelText: 'Số căn hộ',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            keyboardType: TextInputType.number,
+            validator: (value) {
+              if (value == null || value.isEmpty) return 'Vui lòng nhập số căn hộ.';
+              if (int.tryParse(value) == null) return 'Số căn hộ phải là số.';
               return null;
             },
           ),
@@ -526,40 +468,24 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
           if (message != null)
             Text(
               message!,
-              style: TextStyle(
-                  color: message!.contains('thành công')
-                      ? Colors.green
-                      : Colors.red),
+              style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
             ),
           const SizedBox(height: 24),
           // Nút Gửi Thông Tin với Gradient
           Container(
             width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)]), borderRadius: BorderRadius.circular(8)),
             child: ElevatedButton(
               onPressed: submitInfo,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent, // Nền trong suốt
                 shadowColor: Colors.transparent, // Không bóng đổ
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text(
                 'Gửi Thông Tin',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white, // Chữ màu trắng
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.white),
               ),
             ),
           ),
@@ -568,38 +494,22 @@ class _ThirdPartyInfoPageState extends State<ThirdPartyInfoPage> {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
-              ),
+              gradient: const LinearGradient(colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)]),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Padding(
               padding: const EdgeInsets.all(2.0), // Độ dày viền
               child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white, // Nền trắng
-                  borderRadius: BorderRadius.circular(
-                      6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
-                ),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6) // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
+                    ),
                 child: TextButton(
                   onPressed: logout, // Quay lại trang đăng nhập
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.white, // Nền trắng
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
-                  child: const Text(
-                    'Quay lại Đăng Nhập',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.green, // Chữ màu xanh lá
-                    ),
-                  ),
+                  child: const Text('Quay lại Đăng Nhập', style: TextStyle(fontSize: 18, color: Colors.green)),
                 ),
               ),
             ),

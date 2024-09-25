@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'features/authentication/data/authentication_service.dart';
-import 'features/authentication/presentation/login_page.dart';
+import 'features/.authentication/data/authentication_service.dart';
+import 'features/.authentication/presentation/login_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,14 +14,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authService =
-        AuthenticationService(apiKey: apiKey, projectId: projectId);
+    final authService = AuthenticationService(apiKey: apiKey, projectId: projectId);
 
     return MaterialApp(
       title: 'Quản Lý Chung Cư',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: LoginPage(authService: authService),
     );
   }

@@ -1,6 +1,6 @@
 // admin/users/users_page.dart
 import 'package:flutter/material.dart';
-import '../../authentication/data/authentication_service.dart';
+import '../../.authentication/data/authentication_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày tháng
@@ -50,8 +50,7 @@ class _UsersPageState extends State<UsersPage> {
       isLoadingQueue = true;
     });
 
-    final url =
-        'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/queue?key=${widget.authService.apiKey}';
+    final url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/queue?key=${widget.authService.apiKey}';
 
     try {
       final response = await http.get(
@@ -94,8 +93,7 @@ class _UsersPageState extends State<UsersPage> {
       isLoadingResidents = true;
     });
 
-    final url =
-        'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/residents?key=${widget.authService.apiKey}';
+    final url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/residents?key=${widget.authService.apiKey}';
 
     try {
       final response = await http.get(
@@ -138,8 +136,7 @@ class _UsersPageState extends State<UsersPage> {
       isLoadingThirdParties = true;
     });
 
-    final url =
-        'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/thirdParties?key=${widget.authService.apiKey}';
+    final url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/thirdParties?key=${widget.authService.apiKey}';
 
     try {
       final response = await http.get(
@@ -177,8 +174,7 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   // Hàm phê duyệt người dùng từ queue
-  Future<void> approveUser(
-      String queueDocName, Map<String, dynamic> queueData) async {
+  Future<void> approveUser(String queueDocName, Map<String, dynamic> queueData) async {
     setState(() {
       message = null;
     });
@@ -196,8 +192,7 @@ class _UsersPageState extends State<UsersPage> {
           'id': queueData['id']['stringValue'],
           'uid': queueData['uid']['stringValue'],
           'floor': int.parse(queueData['floor']['integerValue']),
-          'apartmentNumber':
-              int.parse(queueData['apartmentNumber']['integerValue']),
+          'apartmentNumber': int.parse(queueData['apartmentNumber']['integerValue']),
           'email': queueData['email']['stringValue'],
           'status': 'Đã duyệt',
         };
@@ -225,13 +220,11 @@ class _UsersPageState extends State<UsersPage> {
       String targetCollection = role == 'Cư dân' ? 'residents' : 'thirdParties';
 
       // Gọi phương thức để tạo document trong collection đích
-      bool success = await widget.authService.createUserDocument(widget.idToken,
-          queueData['uid']['stringValue'], targetData, targetCollection);
+      bool success = await widget.authService.createUserDocument(widget.idToken, queueData['uid']['stringValue'], targetData, targetCollection);
 
       if (success) {
         // Xóa tài liệu từ 'queue'
-        bool deleteSuccess = await widget.authService
-            .deleteQueueDocument(queueDocName, widget.idToken);
+        bool deleteSuccess = await widget.authService.deleteQueueDocument(queueDocName, widget.idToken);
         if (!mounted) return; // Kiểm tra mounted
         if (deleteSuccess) {
           setState(() {
@@ -245,14 +238,12 @@ class _UsersPageState extends State<UsersPage> {
           }
         } else {
           setState(() {
-            message =
-                'Phê duyệt thành công nhưng không thể xóa tài liệu trong queue.';
+            message = 'Phê duyệt thành công nhưng không thể xóa tài liệu trong queue.';
           });
         }
       } else {
         setState(() {
-          message =
-              'Phê duyệt thất bại khi tạo tài liệu trong $targetCollection.';
+          message = 'Phê duyệt thất bại khi tạo tài liệu trong $targetCollection.';
         });
       }
     } catch (e) {
@@ -287,10 +278,7 @@ class _UsersPageState extends State<UsersPage> {
           if (message != null)
             Text(
               message!,
-              style: TextStyle(
-                  color: message!.contains('thành công')
-                      ? Colors.green
-                      : Colors.red),
+              style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
             ),
           const SizedBox(height: 20),
           // Tab để chuyển đổi giữa danh sách chờ và danh sách cư dân, bên thứ 3
@@ -315,9 +303,7 @@ class _UsersPageState extends State<UsersPage> {
                         isLoadingQueue
                             ? const Center(child: CircularProgressIndicator())
                             : queueList.isEmpty
-                                ? const Center(
-                                    child: Text(
-                                        'Không có yêu cầu nào đang chờ duyệt.'))
+                                ? const Center(child: Text('Không có yêu cầu nào đang chờ duyệt.'))
                                 : ListView.builder(
                                     itemCount: queueList.length,
                                     itemBuilder: (context, index) {
@@ -325,45 +311,27 @@ class _UsersPageState extends State<UsersPage> {
                                       final fields = doc['fields'];
                                       return Card(
                                         child: ListTile(
-                                          title: Text(fields['fullName']
-                                              ['stringValue']),
+                                          title: Text(fields['fullName']['stringValue']),
                                           subtitle: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                  'Vai trò: ${fields['role']['stringValue']}'),
-                                              Text(
-                                                  'Giới tính: ${fields['gender']['stringValue']}'),
-                                              Text(
-                                                  'Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
-                                              Text(
-                                                  'Số điện thoại: ${fields['phone']['stringValue']}'),
-                                              Text(
-                                                  'Số ID: ${fields['id']['stringValue']}'),
-                                              Text(
-                                                  'Email: ${fields['email']['stringValue']}'),
-                                              if (fields['role']
-                                                      ['stringValue'] ==
-                                                  'Bên thứ 3')
-                                                Text(
-                                                    'Chức vụ: ${fields['jobTitle']['stringValue']}'),
-                                              if (fields['role']
-                                                      ['stringValue'] ==
-                                                  'Cư dân') ...[
-                                                Text(
-                                                    'Tầng: ${fields['floor']['integerValue']}'),
-                                                Text(
-                                                    'Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
+                                              Text('Vai trò: ${fields['role']['stringValue']}'),
+                                              Text('Giới tính: ${fields['gender']['stringValue']}'),
+                                              Text('Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
+                                              Text('Số điện thoại: ${fields['phone']['stringValue']}'),
+                                              Text('Số ID: ${fields['id']['stringValue']}'),
+                                              Text('Email: ${fields['email']['stringValue']}'),
+                                              if (fields['role']['stringValue'] == 'Bên thứ 3') Text('Chức vụ: ${fields['jobTitle']['stringValue']}'),
+                                              if (fields['role']['stringValue'] == 'Cư dân') ...[
+                                                Text('Tầng: ${fields['floor']['integerValue']}'),
+                                                Text('Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
                                               ],
-                                              Text(
-                                                  'Trạng thái: ${fields['status']['stringValue']}'),
+                                              Text('Trạng thái: ${fields['status']['stringValue']}'),
                                             ],
                                           ),
                                           trailing: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  Colors.green, // Màu nền
+                                              backgroundColor: Colors.green, // Màu nền
                                             ),
                                             onPressed: () {
                                               approveUser(doc['name'], fields);
@@ -379,8 +347,7 @@ class _UsersPageState extends State<UsersPage> {
                         isLoadingResidents
                             ? const Center(child: CircularProgressIndicator())
                             : residentsList.isEmpty
-                                ? const Center(
-                                    child: Text('Không có cư dân nào.'))
+                                ? const Center(child: Text('Không có cư dân nào.'))
                                 : ListView.builder(
                                     itemCount: residentsList.length,
                                     itemBuilder: (context, index) {
@@ -388,28 +355,18 @@ class _UsersPageState extends State<UsersPage> {
                                       final fields = doc['fields'];
                                       return Card(
                                         child: ListTile(
-                                          title: Text(fields['fullName']
-                                              ['stringValue']),
+                                          title: Text(fields['fullName']['stringValue']),
                                           subtitle: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                  'Giới tính: ${fields['gender']['stringValue']}'),
-                                              Text(
-                                                  'Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
-                                              Text(
-                                                  'Số điện thoại: ${fields['phone']['stringValue']}'),
-                                              Text(
-                                                  'Số ID: ${fields['id']['stringValue']}'),
-                                              Text(
-                                                  'Email: ${fields['email']['stringValue']}'),
-                                              Text(
-                                                  'Tầng: ${fields['floor']['integerValue']}'),
-                                              Text(
-                                                  'Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
-                                              Text(
-                                                  'Trạng thái: ${fields['status']['stringValue']}'),
+                                              Text('Giới tính: ${fields['gender']['stringValue']}'),
+                                              Text('Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
+                                              Text('Số điện thoại: ${fields['phone']['stringValue']}'),
+                                              Text('Số ID: ${fields['id']['stringValue']}'),
+                                              Text('Email: ${fields['email']['stringValue']}'),
+                                              Text('Tầng: ${fields['floor']['integerValue']}'),
+                                              Text('Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
+                                              Text('Trạng thái: ${fields['status']['stringValue']}'),
                                             ],
                                           ),
                                         ),
@@ -421,8 +378,7 @@ class _UsersPageState extends State<UsersPage> {
                         isLoadingThirdParties
                             ? const Center(child: CircularProgressIndicator())
                             : thirdPartiesList.isEmpty
-                                ? const Center(
-                                    child: Text('Không có bên thứ 3 nào.'))
+                                ? const Center(child: Text('Không có bên thứ 3 nào.'))
                                 : ListView.builder(
                                     itemCount: thirdPartiesList.length,
                                     itemBuilder: (context, index) {
@@ -430,26 +386,17 @@ class _UsersPageState extends State<UsersPage> {
                                       final fields = doc['fields'];
                                       return Card(
                                         child: ListTile(
-                                          title: Text(fields['fullName']
-                                              ['stringValue']),
+                                          title: Text(fields['fullName']['stringValue']),
                                           subtitle: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                  'Giới tính: ${fields['gender']['stringValue']}'),
-                                              Text(
-                                                  'Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
-                                              Text(
-                                                  'Số điện thoại: ${fields['phone']['stringValue']}'),
-                                              Text(
-                                                  'Số ID: ${fields['id']['stringValue']}'),
-                                              Text(
-                                                  'Email: ${fields['email']['stringValue']}'),
-                                              Text(
-                                                  'Chức vụ: ${fields['jobTitle']['stringValue']}'),
-                                              Text(
-                                                  'Trạng thái: ${fields['status']['stringValue']}'),
+                                              Text('Giới tính: ${fields['gender']['stringValue']}'),
+                                              Text('Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
+                                              Text('Số điện thoại: ${fields['phone']['stringValue']}'),
+                                              Text('Số ID: ${fields['id']['stringValue']}'),
+                                              Text('Email: ${fields['email']['stringValue']}'),
+                                              Text('Chức vụ: ${fields['jobTitle']['stringValue']}'),
+                                              Text('Trạng thái: ${fields['status']['stringValue']}'),
                                             ],
                                           ),
                                         ),

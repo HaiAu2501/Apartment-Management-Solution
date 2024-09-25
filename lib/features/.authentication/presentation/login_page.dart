@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../data/authentication_service.dart';
 import 'register_page.dart';
-import '../../admin/home/home_page.dart';
+import '../../admin/presentation/home_page.dart';
 import '../../resident/presentation/resident_home_page.dart';
-import '../../third_party/presentation/third_party_home_page.dart';
+import '../../guest/presentation/guest_home_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
         // Lấy UID của người dùng
         String? uid = await widget.authService.getUserUid(idToken);
         if (uid != null) {
-          // Kiểm tra vai trò của người dùng trong các collection: admin, residents, thirdParties
+          // Kiểm tra vai trò của người dùng trong các collection: admin, residents, guests
           String? role = await getUserRole(uid, idToken);
 
           if (role == null) {
@@ -75,8 +75,7 @@ class _LoginPageState extends State<LoginPage> {
             String? status = await getUserStatus('residents', uid, idToken);
             if (status == 'Chờ duyệt') {
               setState(() {
-                message =
-                    'Tài khoản của bạn đang trong trạng thái "Chờ duyệt". Vui lòng đợi admin phê duyệt.';
+                message = 'Tài khoản của bạn đang trong trạng thái "Chờ duyệt". Vui lòng đợi admin phê duyệt.';
                 isLoading = false;
               });
             } else if (status == 'Đã duyệt') {
@@ -96,20 +95,19 @@ class _LoginPageState extends State<LoginPage> {
                 isLoading = false;
               });
             }
-          } else if (role == 'thirdParty') {
+          } else if (role == 'guest') {
             // Kiểm tra trạng thái phê duyệt
-            String? status = await getUserStatus('thirdParties', uid, idToken);
+            String? status = await getUserStatus('guests', uid, idToken);
             if (status == 'Chờ duyệt') {
               setState(() {
-                message =
-                    'Tài khoản của bạn đang trong trạng thái "Chờ duyệt". Vui lòng đợi admin phê duyệt.';
+                message = 'Tài khoản của bạn đang trong trạng thái "Chờ duyệt". Vui lòng đợi admin phê duyệt.';
                 isLoading = false;
               });
             } else if (status == 'Đã duyệt') {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ThirdPartyHomePage(
+                  builder: (context) => GuestHomePage(
                     authService: widget.authService,
                     idToken: idToken,
                     uid: uid,
@@ -136,8 +134,7 @@ class _LoginPageState extends State<LoginPage> {
         }
       } else {
         setState(() {
-          message =
-              'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.';
+          message = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.';
           isLoading = false;
         });
       }
@@ -153,8 +150,7 @@ class _LoginPageState extends State<LoginPage> {
   // Hàm lấy vai trò của người dùng từ các collection
   Future<String?> getUserRole(String uid, String idToken) async {
     // Kiểm tra trong collection 'admin'
-    String adminUrl =
-        'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/admin/$uid?key=${widget.authService.apiKey}';
+    String adminUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/admin/$uid?key=${widget.authService.apiKey}';
     try {
       final adminResponse = await http.get(
         Uri.parse(adminUrl),
@@ -169,8 +165,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       // Kiểm tra trong collection 'residents'
-      String residentsUrl =
-          'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/residents/$uid?key=${widget.authService.apiKey}';
+      String residentsUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/residents/$uid?key=${widget.authService.apiKey}';
       final residentsResponse = await http.get(
         Uri.parse(residentsUrl),
         headers: {
@@ -183,19 +178,18 @@ class _LoginPageState extends State<LoginPage> {
         return 'resident';
       }
 
-      // Kiểm tra trong collection 'thirdParties'
-      String thirdPartiesUrl =
-          'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/thirdParties/$uid?key=${widget.authService.apiKey}';
-      final thirdPartiesResponse = await http.get(
-        Uri.parse(thirdPartiesUrl),
+      // Kiểm tra trong collection 'guests'
+      String guestsUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/guests/$uid?key=${widget.authService.apiKey}';
+      final guestsResponse = await http.get(
+        Uri.parse(guestsUrl),
         headers: {
           'Authorization': 'Bearer $idToken',
           'Content-Type': 'application/json',
         },
       );
 
-      if (thirdPartiesResponse.statusCode == 200) {
-        return 'thirdParty';
+      if (guestsResponse.statusCode == 200) {
+        return 'guest';
       }
 
       // Nếu không tìm thấy trong bất kỳ collection nào
@@ -207,10 +201,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // Hàm lấy trạng thái của người dùng từ collection cụ thể
-  Future<String?> getUserStatus(
-      String collection, String uid, String idToken) async {
-    String url =
-        'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/$collection/$uid?key=${widget.authService.apiKey}';
+  Future<String?> getUserStatus(String collection, String uid, String idToken) async {
+    String url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/$collection/$uid?key=${widget.authService.apiKey}';
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -254,10 +246,7 @@ class _LoginPageState extends State<LoginPage> {
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Color.fromRGBO(161, 214, 178, 1),
-                      Color.fromRGBO(241, 243, 194, 1)
-                    ],
+                    colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
@@ -273,10 +262,7 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.25),
-                        Color.fromRGBO(241, 243, 194, 0.75)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.25), Color.fromRGBO(241, 243, 194, 0.75)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -292,10 +278,7 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 1),
-                        Color.fromRGBO(241, 243, 194, 1)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -311,10 +294,7 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topRight,
                       end: Alignment.bottomLeft,
                     ),
@@ -330,10 +310,7 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Color.fromRGBO(161, 214, 178, 0.75),
-                        Color.fromRGBO(241, 243, 194, 0.25)
-                      ],
+                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
                       begin: Alignment.topCenter,
                       end: Alignment.centerRight,
                     ),
@@ -345,9 +322,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    width: isMobile
-                        ? double.infinity
-                        : 800, // Độ rộng tùy theo thiết bị
+                    width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
@@ -378,23 +353,17 @@ class _LoginPageState extends State<LoginPage> {
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
-                                        colors: [
-                                          Color.fromARGB(255, 119, 198, 122),
-                                          Color.fromARGB(255, 252, 242, 150)
-                                        ],
+                                        colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Align(
-                                      alignment:
-                                          Alignment.center, // Căn lề trái
+                                      alignment: Alignment.center, // Căn lề trái
                                       child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Chào mừng',
@@ -431,12 +400,9 @@ class _LoginPageState extends State<LoginPage> {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: message!.contains('thành công')
-                            ? Colors.green
-                            : Colors.red,
+                        color: message!.contains('thành công') ? Colors.green : Colors.red,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -542,10 +508,7 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
+                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -574,10 +537,7 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 119, 198, 122),
-                  Color.fromARGB(255, 252, 242, 150)
-                ],
+                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -586,8 +546,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white, // Nền trắng
-                  borderRadius: BorderRadius.circular(
-                      6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
+                  borderRadius: BorderRadius.circular(6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
                 ),
                 child: TextButton(
                   onPressed: navigateToRegister,
