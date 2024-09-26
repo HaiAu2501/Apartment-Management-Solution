@@ -14,7 +14,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authService = AuthenticationService(apiKey: apiKey, projectId: projectId);
+    final authService =
+        AuthenticationService(apiKey: apiKey, projectId: projectId);
 
     return MaterialApp(
       title: 'Quản Lý Chung Cư',
