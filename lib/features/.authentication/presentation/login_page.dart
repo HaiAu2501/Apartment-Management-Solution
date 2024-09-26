@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/auth_service.dart';
-import 'package:animations/animations.dart';
-import 'resident_info_page.dart';
-import 'guest_info_page.dart';
+import 'register_page.dart';
 import '../../admin/presentation/home_page.dart';
 import '../../resident/presentation/resident_home_page.dart';
 import '../../guest/presentation/guest_home_page.dart';
@@ -19,33 +17,18 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool isLoginMode = true;
+  final _formKey = GlobalKey<FormState>();
 
-  // Login form controllers and key
-  final _loginFormKey = GlobalKey<FormState>();
-  final TextEditingController loginEmailController = TextEditingController();
-  final TextEditingController loginPasswordController = TextEditingController();
-
-  // Register form controllers and key
-  final _registerFormKey = GlobalKey<FormState>();
-  final TextEditingController registerEmailController = TextEditingController();
-  final TextEditingController registerPasswordController = TextEditingController();
-  String selectedRole = 'resident';
+  // Controllers
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   bool isLoading = false;
   String? message;
 
-  // Method to toggle between login and register modes
-  void toggleLoginMode() {
-    setState(() {
-      isLoginMode = !isLoginMode;
-      message = null; // Clear any messages when switching modes
-    });
-  }
-
-  // Handle login
+  // Hàm xử lý đăng nhập
   Future<void> handleLogin() async {
-    if (!_loginFormKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
@@ -54,17 +37,17 @@ class _LoginPageState extends State<LoginPage> {
       message = null;
     });
 
-    String email = loginEmailController.text.trim();
-    String password = loginPasswordController.text.trim();
+    String email = emailController.text.trim();
+    String password = passwordController.text.trim();
 
     try {
-      // Sign in the user
+      // Đăng nhập người dùng
       String? idToken = await widget.authService.signIn(email, password);
       if (idToken != null) {
-        // Get the user's UID
+        // Lấy UID của người dùng
         String? uid = await widget.authService.getUserUid(idToken);
         if (uid != null) {
-          // Determine the user's role
+          // Kiểm tra vai trò của người dùng trong các collection: admin, residents, guests
           String? role = await getUserRole(uid, idToken);
 
           if (role == null) {
@@ -75,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
             return;
           }
 
-          // Navigate based on role and status
+          // Điều hướng dựa trên vai trò và trạng thái
           if (role == 'admin') {
             Navigator.pushReplacement(
               context,
@@ -88,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             );
           } else if (role == 'resident') {
-            // Check approval status
+            // Kiểm tra trạng thái phê duyệt
             String? status = await getUserStatus('residents', uid, idToken);
             if (status == 'Chờ duyệt') {
               setState(() {
@@ -113,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
               });
             }
           } else if (role == 'guest') {
-            // Check approval status
+            // Kiểm tra trạng thái phê duyệt
             String? status = await getUserStatus('guests', uid, idToken);
             if (status == 'Chờ duyệt') {
               setState(() {
@@ -164,57 +147,9 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Handle registration navigation
-  Future<void> navigateToInfoPage() async {
-    if (!_registerFormKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-      message = null;
-    });
-
-    String email = registerEmailController.text.trim();
-    String password = registerPasswordController.text.trim();
-
-    try {
-      // Navigate to the appropriate info page without creating an account
-      if (selectedRole == 'resident') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ResidentInfoPage(
-              authService: widget.authService,
-              email: email,
-              password: password,
-            ),
-          ),
-        );
-      } else if (selectedRole == 'guest') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => GuestInfoPage(
-              authService: widget.authService,
-              email: email,
-              password: password,
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        message = 'Lỗi: $e';
-        isLoading = false;
-      });
-      print('Lỗi khi chuyển hướng: $e');
-    }
-  }
-
-  // Function to get user role
+  // Hàm lấy vai trò của người dùng từ các collection
   Future<String?> getUserRole(String uid, String idToken) async {
-    // Check in 'admin' collection
+    // Kiểm tra trong collection 'admin'
     String adminUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/admin/$uid?key=${widget.authService.apiKey}';
     try {
       final adminResponse = await http.get(
@@ -229,7 +164,7 @@ class _LoginPageState extends State<LoginPage> {
         return 'admin';
       }
 
-      // Check in 'residents' collection
+      // Kiểm tra trong collection 'residents'
       String residentsUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/residents/$uid?key=${widget.authService.apiKey}';
       final residentsResponse = await http.get(
         Uri.parse(residentsUrl),
@@ -243,7 +178,7 @@ class _LoginPageState extends State<LoginPage> {
         return 'resident';
       }
 
-      // Check in 'guests' collection
+      // Kiểm tra trong collection 'guests'
       String guestsUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/guests/$uid?key=${widget.authService.apiKey}';
       final guestsResponse = await http.get(
         Uri.parse(guestsUrl),
@@ -257,7 +192,7 @@ class _LoginPageState extends State<LoginPage> {
         return 'guest';
       }
 
-      // Not found in any collection
+      // Nếu không tìm thấy trong bất kỳ collection nào
       return null;
     } catch (e) {
       print('Lỗi khi kiểm tra vai trò người dùng: $e');
@@ -265,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Function to get user status
+  // Hàm lấy trạng thái của người dùng từ collection cụ thể
   Future<String?> getUserStatus(String collection, String uid, String idToken) async {
     String url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/$collection/$uid?key=${widget.authService.apiKey}';
     try {
@@ -289,7 +224,16 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Build method with transitions
+  // Hàm chuyển hướng đến trang đăng ký
+  void navigateToRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RegisterPage(authService: widget.authService),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -298,7 +242,7 @@ class _LoginPageState extends State<LoginPage> {
         return Scaffold(
           body: Stack(
             children: [
-              // Background gradient
+              // Nền gradient toàn màn hình
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -308,15 +252,12 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              // Background bubbles (same as your original code)
-              // ... (Include the background widgets from your original code)
-
-              // Multiple background bubbles
+              // Thêm nhiều bong bóng nền hơn
               Positioned(
                 top: -50,
                 left: -50,
                 child: Container(
-                  width: 250,
+                  width: 250, // đường kính của bubble
                   height: 250,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -332,7 +273,7 @@ class _LoginPageState extends State<LoginPage> {
                 bottom: -100,
                 right: -50,
                 child: Container(
-                  width: 200,
+                  width: 200, // đường kính của bubble
                   height: 200,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -348,7 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                 top: 120,
                 right: 50,
                 child: Container(
-                  width: 150,
+                  width: 150, // đường kính của bubble
                   height: 150,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -364,7 +305,7 @@ class _LoginPageState extends State<LoginPage> {
                 bottom: 100,
                 right: 500,
                 child: Container(
-                  width: 300,
+                  width: 300, // đường kính của bubble
                   height: 300,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -376,26 +317,82 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              // Main content
+              // Nội dung chính
               Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    width: isMobile ? double.infinity : 800,
+                    width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
                       ],
                     ),
-                    child: isMobile ? buildMobileContent() : buildDesktopContent(),
+                    child: isMobile
+                        ? buildLoginForm()
+                        : IntrinsicHeight(
+                            child: Row(
+                              children: [
+                                // Bên trái: Form đăng nhập
+                                Expanded(
+                                  flex: 1,
+                                  child: buildLoginForm(),
+                                ),
+                                const SizedBox(width: 32),
+                                // Bên phải: Chào mừng
+                                Expanded(
+                                  flex: 1,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Align(
+                                      alignment: Alignment.center, // Căn lề trái
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Chào mừng',
+                                            style: TextStyle(
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          Text(
+                                            'đến với ứng dụng!',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                   ),
                 ),
               ),
-
-              // Display message when there is an error or information
+              // Hiển thị thông báo khi có lỗi hoặc thông tin
               if (message != null)
                 Positioned(
                   top: 50,
@@ -415,8 +412,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-
-              // Display loading indicator
+              // Hiển thị loading
               if (isLoading)
                 Positioned.fill(
                   child: Container(
@@ -433,93 +429,14 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget buildMobileContent() {
-    return PageTransitionSwitcher(
-      duration: const Duration(milliseconds: 500),
-      reverse: !isLoginMode,
-      transitionBuilder: (
-        Widget child,
-        Animation<double> primaryAnimation,
-        Animation<double> secondaryAnimation,
-      ) {
-        return SharedAxisTransition(
-          animation: primaryAnimation,
-          secondaryAnimation: secondaryAnimation,
-          transitionType: SharedAxisTransitionType.vertical,
-          child: child,
-        );
-      },
-      child: isLoginMode ? buildLoginForm() : buildRegisterForm(),
-    );
-  }
-
-  Widget buildDesktopContent() {
-    return PageTransitionSwitcher(
-      duration: const Duration(milliseconds: 500),
-      reverse: !isLoginMode,
-      transitionBuilder: (
-        Widget child,
-        Animation<double> primaryAnimation,
-        Animation<double> secondaryAnimation,
-      ) {
-        return SharedAxisTransition(
-          animation: primaryAnimation,
-          secondaryAnimation: secondaryAnimation,
-          transitionType: SharedAxisTransitionType.vertical,
-          child: child,
-        );
-      },
-      child: isLoginMode ? buildLoginContent() : buildRegisterContent(),
-    );
-  }
-
-  Widget buildLoginContent() {
-    return IntrinsicHeight(
-      key: const ValueKey('loginContent'),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: buildLoginForm(),
-          ),
-          const SizedBox(width: 32),
-          Expanded(
-            flex: 1,
-            child: buildLoginSideMessage(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildRegisterContent() {
-    return IntrinsicHeight(
-      key: const ValueKey('registerContent'),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: buildRegisterForm(),
-          ),
-          const SizedBox(width: 32),
-          Expanded(
-            flex: 1,
-            child: buildRegisterSideMessage(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Login Form
+  // Hàm xây dựng form đăng nhập
   Widget buildLoginForm() {
     return Form(
-      key: _loginFormKey,
+      key: _formKey,
       child: Column(
-        key: const ValueKey('loginForm'),
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 71),
+          const SizedBox(height: 50),
           const Text(
             'ĐĂNG NHẬP',
             style: TextStyle(
@@ -530,7 +447,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 24),
           TextFormField(
-            controller: loginEmailController,
+            controller: emailController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.email),
               labelText: 'Email',
@@ -551,7 +468,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 16),
           TextFormField(
-            controller: loginPasswordController,
+            controller: passwordController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.lock),
               labelText: 'Mật khẩu',
@@ -575,7 +492,7 @@ class _LoginPageState extends State<LoginPage> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {
-                // Handle forgot password
+                // Xử lý khi nhấn Quên mật khẩu (không có xử lý gì)
               },
               child: const Text(
                 'Quên mật khẩu?',
@@ -586,7 +503,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           const SizedBox(height: 5),
-          // Login Button with Gradient
+          // Nút Đăng Nhập với Gradient
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -598,8 +515,8 @@ class _LoginPageState extends State<LoginPage> {
             child: ElevatedButton(
               onPressed: handleLogin,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent, // Transparent background
-                shadowColor: Colors.transparent, // No shadow
+                backgroundColor: Colors.transparent, // Nền trong suốt
+                shadowColor: Colors.transparent, // Không bóng đổ
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -609,13 +526,13 @@ class _LoginPageState extends State<LoginPage> {
                 'Đăng Nhập',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.white, // White text
+                  color: Colors.white, // Chữ màu trắng
                 ),
               ),
             ),
           ),
           const SizedBox(height: 16),
-          // Register Button with gradient border and white background
+          // Nút Đăng Ký với viền gradient và nền trắng
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -625,180 +542,26 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(2.0), // Border thickness
+              padding: const EdgeInsets.all(2.0), // Độ dày viền
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, // White background
-                  borderRadius: BorderRadius.circular(6), // Slightly smaller radius to create border effect
+                  color: Colors.white, // Nền trắng
+                  borderRadius: BorderRadius.circular(6), // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
                 ),
                 child: TextButton(
-                  onPressed: toggleLoginMode,
+                  onPressed: navigateToRegister,
                   style: TextButton.styleFrom(
-                    backgroundColor: Colors.white, // White background
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ),
-                  child: const Text(
-                    'Đăng Ký',
-                    style: TextStyle(fontSize: 18, color: Colors.green),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 71),
-        ],
-      ),
-    );
-  }
-
-  // Register Form
-  Widget buildRegisterForm() {
-    return Form(
-      key: _registerFormKey,
-      child: Column(
-        key: const ValueKey('registerForm'),
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 50),
-          const Text(
-            'ĐĂNG KÝ',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.green,
-            ),
-          ),
-          const SizedBox(height: 24),
-          TextFormField(
-            controller: registerEmailController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.email),
-              labelText: 'Email',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng nhập email';
-              }
-              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                return 'Email không hợp lệ';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: registerPasswordController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.lock),
-              labelText: 'Mật khẩu',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            obscureText: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng nhập mật khẩu';
-              }
-              if (value.length < 6) {
-                return 'Mật khẩu phải có ít nhất 6 ký tự';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: selectedRole,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.person),
-              labelText: 'Vai trò',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            items: <String>['resident', 'guest'].map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value == 'resident' ? 'Cư Dân' : 'Khách'),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                selectedRole = newValue!;
-              });
-            },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng chọn vai trò.';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 20),
-          // Register Button with Gradient
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ElevatedButton(
-              onPressed: navigateToInfoPage,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent, // Transparent background
-                shadowColor: Colors.transparent, // No shadow
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Đăng ký',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white, // White text
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Back to Login Button with gradient border and white background
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(2.0), // Border thickness
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white, // White background
-                  borderRadius: BorderRadius.circular(6), // Slightly smaller radius to create border effect
-                ),
-                child: TextButton(
-                  onPressed: toggleLoginMode,
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.white, // White background
+                    backgroundColor: Colors.white, // Nền trắng
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
                   child: const Text(
-                    'Quay lại đăng nhập',
+                    'Đăng Ký',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.green, // Green text
+                      color: Colors.green, // Chữ màu xanh lá
                     ),
                   ),
                 ),
@@ -807,88 +570,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 50),
         ],
-      ),
-    );
-  }
-
-  // Login Side Message
-  Widget buildLoginSideMessage() {
-    return Container(
-      key: const ValueKey('loginMessage'),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Align(
-        alignment: Alignment.center, // Align left
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Chào mừng',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            Text(
-              'đến với ứng dụng!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Register Side Message
-  Widget buildRegisterSideMessage() {
-    return Container(
-      key: const ValueKey('registerMessage'),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Align(
-        alignment: Alignment.center, // Align left
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Vui lòng',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            Text(
-              'nhập thông tin đăng ký!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
