@@ -1,7 +1,93 @@
 {
     "_cmt_1": "lib\\features\\authentication\\presentation\\login_page.dart",
     "login": {
-        "not_found": "Not found user role.",
-        "pending": "Your account is in \"Pending\" status. Please wait for admin approval."
+        "not_found": "User role not found.",
+        "pending": "Your account is currently in 'Pending' status. Please wait for admin approval.",
+        "invalid_status": "Invalid account status.",
+        "invalid_role": "Invalid user role.",
+        "UID_error": "Unable to retrieve the user's UID.",
+        "fail_login": "Login failed. Please check your login details.",
+        "email_request": "Please enter your email.",
+        "invalid_email": "Invalid email.",
+        "pasword_label": "Password",
+        "password_request": "Please enter your password.",
+        "password_constraint": "Password must be at least 6 characters long.",
+        "forgot_password": "Forgot password?",
+        "login_label": "Login",
+        "register_label": "Register"
+    },
+    "home": {
+        "invalid_role": "Invalid role.",
+        "home_label": "Home"
+    },
+    "guest_info": {
+        "birthday_request": "Please select a date of birth.",
+        "register_success": "Successfully registered. Waiting for admin approval.",
+        "register_info_failure": "Failed to register information.",
+        "register_failure": "Registration failed.",
+        "UID_error": "Unable to retrieve the user's UID.",
+        "done": "Success",
+        "fullname": "Full Name",
+        "fullname_request": "Please enter your full name.",
+        "genre": "Gender",
+        "genres": {
+            "man": "Male",
+            "women": "Female",
+            "other": "Other"
+        },
+        "genre_request": "Please select a gender.",
+        "birthday": "Date of Birth (DD/MM/YYYY)",
+        "phone_number": "Phone Number",
+        "phone_number_request": "Please enter your phone number.",
+        "invalid_phone_number": "Invalid phone number.",
+        "id": "ID/Passport Number",
+        "id_request": "Please enter your ID number.",
+        "role": "Position",
+        "role_request": "Please enter your position."
+    },
+    "register": {
+        "done": "Success",
+        "email": "email",
+        "email_request": "Please enter your email.",
+        "invalid_email": "Invalid email.",
+        "pasword_label": "Password",
+        "password_request": "Please enter your password.",
+        "password_constraint": "Password must be at least 6 characters long.",
+        "role": "Role",
+        "role_request": "Please select a role.",
+        "back_to_login_page": "Back to Login"
+    },
+    "register_info": {
+        "birthday_request": "Please select a date of birth.",
+        "register_success": "Successfully registered. Waiting for admin approval.",
+        "register_info_failure": "Failed to register information.",
+        "UID_error": "Unable to retrieve the user's UID.",
+        "register_failure": "Registration failed.",
+        "error": "Error",
+        "info_request": "Please enter information!",
+        "resident": "Resident",
+        "done": "Success",
+        "resident_info": "RESIDENT INFORMATION",
+        "fullname": "Full Name",
+        "fullname_request": "Please enter your full name.",
+        "genre": "Gender",
+        "genres": {
+            "man": "Male",
+            "women": "Female",
+            "other": "Other"
+        },
+        "genre_request": "Please select a gender.",
+        "birthday": "Date of Birth (DD/MM/YYYY)",
+        "phone_number": "Phone Number",
+        "phone_number_request": "Please enter your phone number.",
+        "invalid_phone_number": "Invalid phone number.",
+        "id": "ID/Passport Number",
+        "id_request": "Please enter your ID number.",
+        "floor_request": "Please enter the floor.",
+        "floor_constraint": "Floor must be a number.",
+        "apartment_number": "Apartment Number",
+        "apartment_request": "Please enter the apartment number.",
+        "apartment_constraint": "Apartment number must be a number.",
+        "back_to_login_page": "Back to Login"
     }
 }
