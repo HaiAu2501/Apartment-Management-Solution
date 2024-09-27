@@ -2,6 +2,95 @@
     "_cmt_1": "lib\\features\\authentication\\presentation\\login_page.dart",
     "login": {
         "not_found": "Không tìm thấy vai trò của người dùng.",
-        "pending": "Tài khoản của bạn đang trong trạng thái \"Chờ duyệt\". Vui lòng đợi admin phê duyệt."
+        "pending": "Tài khoản của bạn đang trong trạng thái \"Chờ duyệt\". Vui lòng đợi admin phê duyệt.",
+        "invalid_status": "Trạng thái tài khoản không hợp lệ.",
+        "invalid_role": "Vai trò người dùng không hợp lệ.",
+        "UID_error": "Không lấy được UID người dùng.",
+        "fail_login":"Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.",
+        "email_request":"Vui lòng nhập email",
+        "invalid_email":"Email không hợp lệ",
+        "pasword_label":"Mật khẩu",
+        "password_request":"Vui lòng nhập mật khẩu",
+        "password_constraint":"Mật khẩu phải có ít nhất 6 ký tự",
+        "forgot_password":"Quên mật khẩu?",
+        "login_label":"Đăng Nhập",
+        "register_label":"Đăng Ký"
+    },
+    "home":{
+        "invalid_role":"Vai trò không hợp lệ.",
+        "home_label":"Trang Chủ"
+    },
+    "guest_info":{
+        "birthday_request":"Vui lòng chọn ngày sinh.",
+        "register_success":"Đăng ký thông tin thành công. Đang chờ admin phê duyệt.",
+        "register_info_failure":"Đăng ký thông tin thất bại.",
+        "register_failure":"Đăng ký thất bại.",
+        "UID_error": "Không lấy được UID người dùng.",
+        "done":"thành công",
+        "fullname":"Họ và tên",
+        "fullname_request":"Vui lòng nhập họ và tên.",
+        "genre":"Giới tính",
+        "genres":{
+            "man":"Nam",
+            "women":"Nữ",
+            "other":"Khác"
+        },
+        "genre_request":"Vui lòng chọn giới tính.",
+        "birthday":"Ngày tháng năm sinh (DD/MM/YYYY)",
+        "phone_number":"Số điện thoại",
+        "phone_number_request":"Vui lòng nhập số điện thoại.",
+        "invalid_phone_number":"Số điện thoại không hợp lệ.",
+        "id":"Số CCCD/CMND/Hộ chiếu",
+        "id_request":"Vui lòng nhập số ID.",
+        "role":"Chức vụ",
+        "role_request":"Vui lòng nhập chức vụ."
+    },
+    "register":{
+        "done":"thành công",
+        "email":"email",
+        "email_request":"Vui lòng nhập email",
+        "invalid_email":"Email không hợp lệ",
+        "pasword_label":"Mật khẩu",
+        "password_request":"Vui lòng nhập mật khẩu",
+        "password_constraint":"Mật khẩu phải có ít nhất 6 ký tự",
+        "role":"Vai trò",
+        "role_request":"Vui lòng chọn vai trò.",
+        "back_to_login_page":"Quay lại đăng nhập"
+
+    },
+    "register_info":{
+        "birthday_request":"Vui lòng chọn ngày sinh.",
+        "register_success":"Đăng ký thông tin thành công. Đang chờ admin phê duyệt.",
+        "register_info_failure":"Đăng ký thông tin thất bại.",
+        "UID_error": "Không lấy được UID người dùng.",
+        "register_failure":"Đăng ký thất bại.",
+        "error":"Lỗi",
+        "info_request":"vui lòng nhập thông tin!",
+        "resident":"Quý cư dân",
+        "done":"thành công",
+        "resident_info":"THÔNG TIN CƯ DÂN",
+        "fullname":"Họ và Tên",
+        "fullname_request":"Vui lòng nhập họ và tên.",
+        "genre":"Giới tính",
+        "genres":{
+            "man":"Nam",
+            "women":"Nữ",
+            "other":"Khác"
+        },
+        "genre_request":"Vui lòng chọn giới tính.",
+        "birthday":"Ngày tháng năm sinh (DD/MM/YYYY)",
+        "phone_number":"Số điện thoại",
+        "phone_number_request":"Vui lòng nhập số điện thoại.",
+        "invalid_phone_number":"Số điện thoại không hợp lệ.",
+        "id":"Số CCCD/CMND/Hộ chiếu",
+        "id_request":"Vui lòng nhập số ID.",
+        "floor_request":"Vui lòng nhập tầng.",
+        "floor_constraint":"Tầng phải là số.",
+        "apartment_number":"Số căn hộ",
+        "apartment_request":"Vui lòng nhập số căn hộ.",
+        "apartment_constraint":"Số căn hộ phải là số.",
+        "back_to_login_page":"Quay lại đăng nhập"
+
     }
+
 }
