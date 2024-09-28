@@ -159,6 +159,7 @@ class _LoginPageState extends State<LoginPage> {
           'Content-Type': 'application/json',
         },
       );
+      print('adminResponse: ${adminResponse.statusCode}');
 
       if (adminResponse.statusCode == 200) {
         return 'admin';

@@ -11,11 +11,11 @@ class UsersPage extends StatefulWidget {
   final String uid;
 
   const UsersPage({
-    Key? key,
+    super.key,
     required this.authService,
     required this.idToken,
     required this.uid,
-  }) : super(key: key);
+  });
 
   @override
   _UsersPageState createState() => _UsersPageState();
@@ -24,10 +24,10 @@ class UsersPage extends StatefulWidget {
 class _UsersPageState extends State<UsersPage> {
   List<dynamic> queueList = [];
   List<dynamic> residentsList = [];
-  List<dynamic> thirdPartiesList = [];
+  List<dynamic> guestsList = [];
   bool isLoadingQueue = false;
   bool isLoadingResidents = false;
-  bool isLoadingThirdParties = false;
+  bool isLoadingGuests = false;
   String? message;
 
   @override
@@ -35,12 +35,11 @@ class _UsersPageState extends State<UsersPage> {
     super.initState();
     fetchQueue();
     fetchResidents();
-    fetchThirdParties();
+    fetchGuests();
   }
 
   @override
   void dispose() {
-    // Nếu bạn sử dụng Timer hoặc nguồn bất đồng bộ khác, hãy hủy chúng tại đây
     super.dispose();
   }
 
@@ -130,13 +129,13 @@ class _UsersPageState extends State<UsersPage> {
     }
   }
 
-  // Hàm lấy danh sách bên thứ 3
-  Future<void> fetchThirdParties() async {
+  // Hàm lấy danh sách khách
+  Future<void> fetchGuests() async {
     setState(() {
-      isLoadingThirdParties = true;
+      isLoadingGuests = true;
     });
 
-    final url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/thirdParties?key=${widget.authService.apiKey}';
+    final url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/guests?key=${widget.authService.apiKey}';
 
     try {
       final response = await http.get(
@@ -152,24 +151,24 @@ class _UsersPageState extends State<UsersPage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          thirdPartiesList = data['documents'] ?? [];
-          isLoadingThirdParties = false;
+          guestsList = data['documents'] ?? [];
+          isLoadingGuests = false;
         });
       } else {
         setState(() {
-          message = 'Lỗi khi tải danh sách bên thứ 3.';
-          isLoadingThirdParties = false;
+          message = 'Lỗi khi tải danh sách khách.';
+          isLoadingGuests = false;
         });
-        print('Lỗi khi tải thirdParties: ${response.statusCode}');
+        print('Lỗi khi tải guests: ${response.statusCode}');
         print('Chi tiết lỗi: ${response.body}');
       }
     } catch (e) {
       if (!mounted) return; // Kiểm tra mounted
       setState(() {
-        message = 'Lỗi khi tải danh sách bên thứ 3.';
-        isLoadingThirdParties = false;
+        message = 'Lỗi khi tải danh sách khách.';
+        isLoadingGuests = false;
       });
-      print('Lỗi khi tải thirdParties: $e');
+      print('Lỗi khi tải guests: $e');
     }
   }
 
@@ -181,8 +180,29 @@ class _UsersPageState extends State<UsersPage> {
 
     try {
       String role = queueData['role']['stringValue'];
+      String email = queueData['email']['stringValue'];
+      String password = queueData['password']['stringValue']; // Lấy mật khẩu từ queue
       Map<String, dynamic> targetData = {};
 
+      // Tạo tài khoản Firebase cho người dùng
+      String? idToken = await widget.authService.signUp(email, password);
+      if (idToken == null) {
+        setState(() {
+          message = 'Không thể tạo tài khoản Firebase cho người dùng.';
+        });
+        return;
+      }
+
+      // Lấy UID từ idToken
+      String? uid = await widget.authService.getUserUid(idToken);
+      if (uid == null) {
+        setState(() {
+          message = 'Không lấy được UID của người dùng.';
+        });
+        return;
+      }
+
+      // Chuẩn bị dữ liệu cho collection đích
       if (role == 'Cư dân') {
         targetData = {
           'fullName': queueData['fullName']['stringValue'],
@@ -190,26 +210,23 @@ class _UsersPageState extends State<UsersPage> {
           'dob': queueData['dob']['stringValue'],
           'phone': queueData['phone']['stringValue'],
           'id': queueData['id']['stringValue'],
-          'uid': queueData['uid']['stringValue'],
           'floor': int.parse(queueData['floor']['integerValue']),
           'apartmentNumber': int.parse(queueData['apartmentNumber']['integerValue']),
-          'email': queueData['email']['stringValue'],
+          'email': email,
           'status': 'Đã duyệt',
         };
-      } else if (role == 'Bên thứ 3') {
+      } else if (role == 'Khách') {
         targetData = {
           'fullName': queueData['fullName']['stringValue'],
           'gender': queueData['gender']['stringValue'],
           'dob': queueData['dob']['stringValue'],
           'phone': queueData['phone']['stringValue'],
           'id': queueData['id']['stringValue'],
-          'uid': queueData['uid']['stringValue'],
-          'email': queueData['email']['stringValue'],
+          'email': email,
           'jobTitle': queueData['jobTitle']['stringValue'],
           'status': 'Đã duyệt',
         };
       } else {
-        if (!mounted) return; // Kiểm tra mounted
         setState(() {
           message = 'Vai trò không hợp lệ.';
         });
@@ -217,10 +234,15 @@ class _UsersPageState extends State<UsersPage> {
       }
 
       // Chọn collection đích dựa trên vai trò
-      String targetCollection = role == 'Cư dân' ? 'residents' : 'thirdParties';
+      String targetCollection = role == 'Cư dân' ? 'residents' : 'guests';
 
-      // Gọi phương thức để tạo document trong collection đích
-      bool success = await widget.authService.createUserDocument(widget.idToken, queueData['uid']['stringValue'], targetData, targetCollection);
+      // Gọi phương thức để tạo document trong collection đích với UID làm documentID
+      bool success = await widget.authService.createUserDocument(
+        widget.idToken,
+        uid,
+        targetData,
+        targetCollection,
+      );
 
       if (success) {
         // Xóa tài liệu từ 'queue'
@@ -234,7 +256,7 @@ class _UsersPageState extends State<UsersPage> {
           if (role == 'Cư dân') {
             fetchResidents();
           } else {
-            fetchThirdParties();
+            fetchGuests();
           }
         } else {
           setState(() {
@@ -281,7 +303,7 @@ class _UsersPageState extends State<UsersPage> {
               style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
             ),
           const SizedBox(height: 20),
-          // Tab để chuyển đổi giữa danh sách chờ và danh sách cư dân, bên thứ 3
+          // Tab để chuyển đổi giữa danh sách chờ và danh sách cư dân, khách
           Expanded(
             child: DefaultTabController(
               length: 3,
@@ -293,7 +315,7 @@ class _UsersPageState extends State<UsersPage> {
                     tabs: [
                       Tab(text: 'Chờ duyệt'),
                       Tab(text: 'Cư dân'),
-                      Tab(text: 'Bên thứ 3'),
+                      Tab(text: 'Khách'),
                     ],
                   ),
                   Expanded(
@@ -321,7 +343,7 @@ class _UsersPageState extends State<UsersPage> {
                                               Text('Số điện thoại: ${fields['phone']['stringValue']}'),
                                               Text('Số ID: ${fields['id']['stringValue']}'),
                                               Text('Email: ${fields['email']['stringValue']}'),
-                                              if (fields['role']['stringValue'] == 'Bên thứ 3') Text('Chức vụ: ${fields['jobTitle']['stringValue']}'),
+                                              if (fields['role']['stringValue'] == 'Khách') Text('Chức vụ: ${fields['jobTitle']['stringValue']}'),
                                               if (fields['role']['stringValue'] == 'Cư dân') ...[
                                                 Text('Tầng: ${fields['floor']['integerValue']}'),
                                                 Text('Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
@@ -375,14 +397,14 @@ class _UsersPageState extends State<UsersPage> {
                                   ),
 
                         // Tab 3: Danh Sách Bên Thứ 3
-                        isLoadingThirdParties
+                        isLoadingGuests
                             ? const Center(child: CircularProgressIndicator())
-                            : thirdPartiesList.isEmpty
-                                ? const Center(child: Text('Không có bên thứ 3 nào.'))
+                            : guestsList.isEmpty
+                                ? const Center(child: Text('Không có khách nào.'))
                                 : ListView.builder(
-                                    itemCount: thirdPartiesList.length,
+                                    itemCount: guestsList.length,
                                     itemBuilder: (context, index) {
-                                      final doc = thirdPartiesList[index];
+                                      final doc = guestsList[index];
                                       final fields = doc['fields'];
                                       return Card(
                                         child: ListTile(
