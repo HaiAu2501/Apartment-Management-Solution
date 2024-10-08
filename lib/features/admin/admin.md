@@ -27,13 +27,16 @@ Sau khi đăng nhập với tư cách Quản trị viên, người dùng sẽ đ
 
 ## 3. Người dùng (Users)
 
-Mục đích: Quản lý tất cả các tài khoản người dùng trong hệ thống.
+> **Mô tả:** Quản lý thông tin cư dân, nhân viên, và các tài khoản khác trong hệ thống.
 
-Nội dung:
-* Tất cả cư dân: Danh sách toàn bộ cư dân, chức năng tìm kiếm, lọc, chỉnh sửa thông tin.
-  * Mỗi trang hiển thị cư dân của các căn hộ trong cùng một tầng.
-* Bên thứ 3: Danh sách các bên thứ 3 như bảo vệ, nhân viên vệ sinh, công an, v.v.
-* Tài khoản chờ duyệt: Các tài khoản mới đăng ký cần Admin phê duyệt.
+| Danh sách nội dung | Mô tả |
+|-------------------|-------|
+| Danh sách cư dân | - Tên, số điện thoại, email, căn hộ, số người ở, ngày sinh, giới tính. <br> - Trạng thái tài khoản: chờ duyệt, chính thức, bị khóa. |
+| Danh sách nhân viên | - Tên, số điện thoại, email, chức vụ, ngày bắt đầu làm việc. <br> - Trạng thái tài khoản: chờ duyệt, chính thức, bị khóa. |
+| Danh sách tài khoản bên thứ 3 | - Tên, số điện thoại, email, loại tài khoản. <br> - Trạng thái tài khoản: chờ duyệt, chính thức, bị khóa. |
+| Thêm mới | Tạo tài khoản mới cho cư dân, nhân viên, hoặc bên thứ 3. |
+| Chỉnh sửa | Cập nhật thông tin cá nhân của cư dân, nhân viên, hoặc bên thứ 3. |
+| Xóa | Xóa tài khoản cư dân, nhân viên, hoặc bên thứ 3. |
 
 
 ## 4. Fees (Phí và Tài Chính)

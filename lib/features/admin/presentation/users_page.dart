@@ -1,9 +1,9 @@
-// admin/users/users_page.dart
+// lib/features/admin/presentation/users_page.dart
 import 'package:flutter/material.dart';
 import '../../.authentication/data/auth_service.dart';
+import '../data/admin_repository.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày tháng
+import 'package:intl/intl.dart';
 
 class UsersPage extends StatefulWidget {
   final AuthenticationService authService;
@@ -22,6 +22,8 @@ class UsersPage extends StatefulWidget {
 }
 
 class _UsersPageState extends State<UsersPage> {
+  late AdminRepository adminRepository;
+
   List<dynamic> queueList = [];
   List<dynamic> residentsList = [];
   List<dynamic> guestsList = [];
@@ -30,9 +32,17 @@ class _UsersPageState extends State<UsersPage> {
   bool isLoadingGuests = false;
   String? message;
 
+  // Map để lưu trạng thái mở rộng của từng tài liệu
+  Map<String, bool> expandedRows = {};
+
   @override
   void initState() {
     super.initState();
+    adminRepository = AdminRepository(
+      apiKey: widget.authService.apiKey,
+      projectId: widget.authService.projectId,
+    );
+    print('adminRepository initialized');
     fetchQueue();
     fetchResidents();
     fetchGuests();
@@ -49,35 +59,13 @@ class _UsersPageState extends State<UsersPage> {
       isLoadingQueue = true;
     });
 
-    final url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/queue?key=${widget.authService.apiKey}';
-
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer ${widget.idToken}',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (!mounted) return; // Kiểm tra mounted
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          queueList = data['documents'] ?? [];
-          isLoadingQueue = false;
-        });
-      } else {
-        setState(() {
-          message = 'Lỗi khi tải danh sách chờ duyệt.';
-          isLoadingQueue = false;
-        });
-        print('Lỗi khi tải queue: ${response.statusCode}');
-        print('Chi tiết lỗi: ${response.body}');
-      }
+      List<dynamic> fetchedQueue = await adminRepository.fetchQueue(widget.idToken);
+      setState(() {
+        queueList = fetchedQueue;
+        isLoadingQueue = false;
+      });
     } catch (e) {
-      if (!mounted) return; // Kiểm tra mounted
       setState(() {
         message = 'Lỗi khi tải danh sách chờ duyệt.';
         isLoadingQueue = false;
@@ -92,35 +80,13 @@ class _UsersPageState extends State<UsersPage> {
       isLoadingResidents = true;
     });
 
-    final url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/residents?key=${widget.authService.apiKey}';
-
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer ${widget.idToken}',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (!mounted) return; // Kiểm tra mounted
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          residentsList = data['documents'] ?? [];
-          isLoadingResidents = false;
-        });
-      } else {
-        setState(() {
-          message = 'Lỗi khi tải danh sách cư dân.';
-          isLoadingResidents = false;
-        });
-        print('Lỗi khi tải residents: ${response.statusCode}');
-        print('Chi tiết lỗi: ${response.body}');
-      }
+      List<dynamic> fetchedResidents = await adminRepository.fetchResidents(widget.idToken);
+      setState(() {
+        residentsList = fetchedResidents;
+        isLoadingResidents = false;
+      });
     } catch (e) {
-      if (!mounted) return; // Kiểm tra mounted
       setState(() {
         message = 'Lỗi khi tải danh sách cư dân.';
         isLoadingResidents = false;
@@ -135,35 +101,13 @@ class _UsersPageState extends State<UsersPage> {
       isLoadingGuests = true;
     });
 
-    final url = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/guests?key=${widget.authService.apiKey}';
-
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer ${widget.idToken}',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (!mounted) return; // Kiểm tra mounted
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          guestsList = data['documents'] ?? [];
-          isLoadingGuests = false;
-        });
-      } else {
-        setState(() {
-          message = 'Lỗi khi tải danh sách khách.';
-          isLoadingGuests = false;
-        });
-        print('Lỗi khi tải guests: ${response.statusCode}');
-        print('Chi tiết lỗi: ${response.body}');
-      }
+      List<dynamic> fetchedGuests = await adminRepository.fetchGuests(widget.idToken);
+      setState(() {
+        guestsList = fetchedGuests;
+        isLoadingGuests = false;
+      });
     } catch (e) {
-      if (!mounted) return; // Kiểm tra mounted
       setState(() {
         message = 'Lỗi khi tải danh sách khách.';
         isLoadingGuests = false;
@@ -179,102 +123,78 @@ class _UsersPageState extends State<UsersPage> {
     });
 
     try {
+      await adminRepository.approveUser(queueDocName, queueData, widget.idToken, widget.authService);
+      setState(() {
+        message = 'Phê duyệt thành công.';
+      });
+      fetchQueue();
       String role = queueData['role']['stringValue'];
-      String email = queueData['email']['stringValue'];
-      String password = queueData['password']['stringValue']; // Lấy mật khẩu từ queue
-      Map<String, dynamic> targetData = {};
-
-      // Tạo tài khoản Firebase cho người dùng
-      String? idToken = await widget.authService.signUp(email, password);
-      if (idToken == null) {
-        setState(() {
-          message = 'Không thể tạo tài khoản Firebase cho người dùng.';
-        });
-        return;
-      }
-
-      // Lấy UID từ idToken
-      String? uid = await widget.authService.getUserUid(idToken);
-      if (uid == null) {
-        setState(() {
-          message = 'Không lấy được UID của người dùng.';
-        });
-        return;
-      }
-
-      // Chuẩn bị dữ liệu cho collection đích
       if (role == 'Cư dân') {
-        targetData = {
-          'fullName': queueData['fullName']['stringValue'],
-          'gender': queueData['gender']['stringValue'],
-          'dob': queueData['dob']['stringValue'],
-          'phone': queueData['phone']['stringValue'],
-          'id': queueData['id']['stringValue'],
-          'floor': int.parse(queueData['floor']['integerValue']),
-          'apartmentNumber': int.parse(queueData['apartmentNumber']['integerValue']),
-          'email': email,
-          'status': 'Đã duyệt',
-        };
-      } else if (role == 'Khách') {
-        targetData = {
-          'fullName': queueData['fullName']['stringValue'],
-          'gender': queueData['gender']['stringValue'],
-          'dob': queueData['dob']['stringValue'],
-          'phone': queueData['phone']['stringValue'],
-          'id': queueData['id']['stringValue'],
-          'email': email,
-          'jobTitle': queueData['jobTitle']['stringValue'],
-          'status': 'Đã duyệt',
-        };
+        fetchResidents();
       } else {
-        setState(() {
-          message = 'Vai trò không hợp lệ.';
-        });
-        return;
-      }
-
-      // Chọn collection đích dựa trên vai trò
-      String targetCollection = role == 'Cư dân' ? 'residents' : 'guests';
-
-      // Gọi phương thức để tạo document trong collection đích với UID làm documentID
-      bool success = await widget.authService.createUserDocument(
-        widget.idToken,
-        uid,
-        targetData,
-        targetCollection,
-      );
-
-      if (success) {
-        // Xóa tài liệu từ 'queue'
-        bool deleteSuccess = await widget.authService.deleteQueueDocument(queueDocName, widget.idToken);
-        if (!mounted) return; // Kiểm tra mounted
-        if (deleteSuccess) {
-          setState(() {
-            message = 'Phê duyệt thành công.';
-          });
-          fetchQueue();
-          if (role == 'Cư dân') {
-            fetchResidents();
-          } else {
-            fetchGuests();
-          }
-        } else {
-          setState(() {
-            message = 'Phê duyệt thành công nhưng không thể xóa tài liệu trong queue.';
-          });
-        }
-      } else {
-        setState(() {
-          message = 'Phê duyệt thất bại khi tạo tài liệu trong $targetCollection.';
-        });
+        fetchGuests();
       }
     } catch (e) {
-      if (!mounted) return; // Kiểm tra mounted
       setState(() {
-        message = 'Lỗi khi phê duyệt người dùng.';
+        message = e.toString();
       });
       print('Lỗi khi phê duyệt user: $e');
     }
+  }
+
+  // Hàm từ chối người dùng
+  Future<void> rejectUser(String queueDocName) async {
+    setState(() {
+      message = null;
+    });
+
+    try {
+      await adminRepository.rejectUser(queueDocName, widget.idToken, widget.authService);
+      setState(() {
+        message = 'Đã từ chối người dùng.';
+      });
+      fetchQueue();
+    } catch (e) {
+      setState(() {
+        message = e.toString();
+      });
+      print('Lỗi khi từ chối user: $e');
+    }
+  }
+
+  Future<void> editUser(String queueDocName, Map<String, dynamic> updatedData) async {
+    setState(() {
+      message = null;
+    });
+
+    try {
+      await adminRepository.updateQueueDocument(queueDocName, updatedData, widget.idToken);
+      setState(() {
+        message = 'Đã cập nhật thông tin người dùng.';
+      });
+      fetchQueue();
+    } catch (e) {
+      setState(() {
+        message = 'Lỗi khi cập nhật thông tin.';
+      });
+      print('Lỗi khi cập nhật user: $e');
+    }
+  }
+
+  // Hàm chuyển đổi trạng thái mở rộng của dòng
+  void toggleExpanded(String docName) {
+    setState(() {
+      expandedRows[docName] = !(expandedRows[docName] ?? false);
+    });
+  }
+
+  // Hàm hiển thị thông báo
+  Widget buildMessage() {
+    if (message == null) return SizedBox.shrink();
+    return Text(
+      message!,
+      style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
+    );
   }
 
   // Hàm định dạng ngày sinh
@@ -297,11 +217,7 @@ class _UsersPageState extends State<UsersPage> {
       child: Column(
         children: [
           // Hiển thị thông báo
-          if (message != null)
-            Text(
-              message!,
-              style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
-            ),
+          buildMessage(),
           const SizedBox(height: 20),
           // Tab để chuyển đổi giữa danh sách chờ và danh sách cư dân, khách
           Expanded(
@@ -331,35 +247,86 @@ class _UsersPageState extends State<UsersPage> {
                                     itemBuilder: (context, index) {
                                       final doc = queueList[index];
                                       final fields = doc['fields'];
+                                      final docName = doc['name'];
+                                      bool isExpanded = expandedRows[docName] ?? false;
+
                                       return Card(
-                                        child: ListTile(
-                                          title: Text(fields['fullName']['stringValue']),
-                                          subtitle: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text('Vai trò: ${fields['role']['stringValue']}'),
-                                              Text('Giới tính: ${fields['gender']['stringValue']}'),
-                                              Text('Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
-                                              Text('Số điện thoại: ${fields['phone']['stringValue']}'),
-                                              Text('Số ID: ${fields['id']['stringValue']}'),
-                                              Text('Email: ${fields['email']['stringValue']}'),
-                                              if (fields['role']['stringValue'] == 'Khách') Text('Chức vụ: ${fields['jobTitle']['stringValue']}'),
-                                              if (fields['role']['stringValue'] == 'Cư dân') ...[
-                                                Text('Tầng: ${fields['floor']['integerValue']}'),
-                                                Text('Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
-                                              ],
-                                              Text('Trạng thái: ${fields['status']['stringValue']}'),
-                                            ],
-                                          ),
-                                          trailing: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green, // Màu nền
+                                        child: Column(
+                                          children: [
+                                            ListTile(
+                                              title: Text(fields['fullName']['stringValue']),
+                                              subtitle: Row(
+                                                children: [
+                                                  Expanded(child: Text('Giới tính: ${fields['gender']['stringValue']}')),
+                                                  Expanded(child: Text('Email: ${fields['email']['stringValue']}')),
+                                                  Expanded(child: Text('Vai trò: ${fields['role']['stringValue']}')),
+                                                  Expanded(child: Text('SĐT: ${fields['phone']['stringValue']}')),
+                                                ],
+                                              ),
+                                              trailing: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(Icons.check, color: Colors.green),
+                                                    tooltip: 'Phê duyệt',
+                                                    onPressed: () {
+                                                      approveUser(docName, fields);
+                                                    },
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.close, color: Colors.red),
+                                                    tooltip: 'Từ chối',
+                                                    onPressed: () {
+                                                      rejectUser(docName);
+                                                    },
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.visibility, color: Colors.blue),
+                                                    tooltip: 'Xem thêm',
+                                                    onPressed: () {
+                                                      toggleExpanded(docName);
+                                                    },
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.edit, color: Colors.orange),
+                                                    tooltip: 'Chỉnh sửa',
+                                                    onPressed: () {
+                                                      toggleExpanded(docName);
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            onPressed: () {
-                                              approveUser(doc['name'], fields);
-                                            },
-                                            child: const Text('Phê duyệt'),
-                                          ),
+                                            // Dòng mở rộng khi xem thêm hoặc chỉnh sửa
+                                            if (isExpanded)
+                                              Padding(
+                                                padding: const EdgeInsets.all(16.0),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    // Hiển thị chi tiết hoặc biểu mẫu chỉnh sửa
+                                                    // Bạn có thể phân biệt giữa xem và chỉnh sửa bằng cách thêm trạng thái khác
+                                                    // Dưới đây là ví dụ đơn giản chỉ hiển thị thông tin
+                                                    Text('Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
+                                                    Text('Số ID: ${fields['id']['stringValue']}'),
+                                                    if (fields['role']['stringValue'] == 'Khách') Text('Chức vụ: ${fields['jobTitle']['stringValue']}'),
+                                                    if (fields['role']['stringValue'] == 'Cư dân') ...[
+                                                      Text('Tầng: ${fields['floor']['integerValue']}'),
+                                                      Text('Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
+                                                    ],
+                                                    Text('Trạng thái: ${fields['status']['stringValue']}'),
+                                                    const SizedBox(height: 10),
+                                                    // Biểu mẫu chỉnh sửa
+                                                    EditUserForm(
+                                                      initialData: fields,
+                                                      onSave: (updatedData) {
+                                                        editUser(docName, updatedData);
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       );
                                     },
@@ -396,7 +363,7 @@ class _UsersPageState extends State<UsersPage> {
                                     },
                                   ),
 
-                        // Tab 3: Danh Sách Bên Thứ 3
+                        // Tab 3: Danh Sách Khách
                         isLoadingGuests
                             ? const Center(child: CircularProgressIndicator())
                             : guestsList.isEmpty
@@ -434,6 +401,82 @@ class _UsersPageState extends State<UsersPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Biểu mẫu chỉnh sửa người dùng
+class EditUserForm extends StatefulWidget {
+  final Map<String, dynamic> initialData;
+  final Function(Map<String, dynamic>) onSave;
+
+  const EditUserForm({Key? key, required this.initialData, required this.onSave}) : super(key: key);
+
+  @override
+  _EditUserFormState createState() => _EditUserFormState();
+}
+
+class _EditUserFormState extends State<EditUserForm> {
+  late TextEditingController nameController;
+  late TextEditingController emailController;
+  late TextEditingController phoneController;
+  // Thêm các controller khác tùy thuộc vào vai trò
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.initialData['fullName']['stringValue']);
+    emailController = TextEditingController(text: widget.initialData['email']['stringValue']);
+    phoneController = TextEditingController(text: widget.initialData['phone']['stringValue']);
+    // Khởi tạo các controller khác
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    // Dispose các controller khác
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Họ tên'),
+        ),
+        TextField(
+          controller: emailController,
+          decoration: const InputDecoration(labelText: 'Email'),
+        ),
+        TextField(
+          controller: phoneController,
+          decoration: const InputDecoration(labelText: 'Số điện thoại'),
+        ),
+        // Thêm các trường khác
+        const SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: () {
+            // Thu thập dữ liệu đã chỉnh sửa
+            Map<String, dynamic> updatedData = {
+              // **Lưu ý:** Không nên bao bọc giá trị trong 'stringValue' ở đây
+              'fullName': nameController.text,
+              'email': emailController.text,
+              'phone': phoneController.text,
+              // Thêm các trường khác
+            };
+
+            // **Debug:** In dữ liệu trước khi gửi
+            print('Updated Data: $updatedData');
+
+            widget.onSave(updatedData);
+          },
+          child: const Text('Lưu'),
+        ),
+      ],
     );
   }
 }

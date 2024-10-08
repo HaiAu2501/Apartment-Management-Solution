@@ -150,6 +150,37 @@ class AuthenticationService {
     }
   }
 
+  // Cập nhật tài liệu trong collection 'queue'
+  Future<bool> updateQueueDocument(String documentName, Map<String, dynamic> updatedData, String idToken, List<String> fieldPaths // Thêm tham số này
+      ) async {
+    // Xây dựng updateMask.fieldPaths từ danh sách fieldPaths
+    final updateMask = {
+      'fieldPaths': fieldPaths,
+    };
+
+    final url = 'https://firestore.googleapis.com/v1/$documentName?key=$apiKey';
+
+    final response = await http.patch(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'fields': updatedData.map((key, value) => MapEntry(key, encodeField(value))),
+        'updateMask': updateMask, // Thêm updateMask vào body
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print('Lỗi khi cập nhật document trong queue: ${response.statusCode}');
+      print('Chi tiết lỗi: ${response.body}');
+      return false;
+    }
+  }
+
   // Helper function để mã hóa trường dữ liệu
   Map<String, dynamic> encodeField(dynamic value) {
     if (value is String) {
