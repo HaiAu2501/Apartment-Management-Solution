@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 
 class AuthenticationService {
   final String apiKey;
@@ -9,8 +10,7 @@ class AuthenticationService {
 
   // Đăng ký người dùng mới
   Future<String?> signUp(String email, String password) async {
-    final url =
-        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$apiKey';
+    final url = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$apiKey';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -33,8 +33,7 @@ class AuthenticationService {
 
   // Đăng nhập người dùng
   Future<String?> signIn(String email, String password) async {
-    final url =
-        'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$apiKey';
+    final url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$apiKey';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -57,8 +56,7 @@ class AuthenticationService {
 
   // Lấy UID từ idToken
   Future<String?> getUserUid(String idToken) async {
-    final url =
-        'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=$apiKey';
+    final url = 'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=$apiKey';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -80,28 +78,25 @@ class AuthenticationService {
     }
   }
 
-  // Tạo tài liệu trong collection 'queue'
-  Future<bool> createQueueDocument(
-      String idToken, Map<String, dynamic> queueData) async {
+  // Tạo tài liệu trong collection 'queue' với documentID tự tạo
+  Future<bool> createQueueDocument(Map<String, dynamic> queueData) async {
     String collectionPath = 'queue';
-    String documentId = queueData['uid'];
+    String documentId = Uuid().v4(); // Tạo một UUID duy nhất làm documentID
 
-    final url =
-        'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/$collectionPath/$documentId?key=$apiKey';
+    final url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/$collectionPath/$documentId?key=$apiKey';
 
     final response = await http.patch(
       Uri.parse(url),
       headers: {
-        'Authorization': 'Bearer $idToken',
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'fields':
-            queueData.map((key, value) => MapEntry(key, encodeField(value))),
+        'fields': queueData.map((key, value) => MapEntry(key, encodeField(value))),
       }),
     );
 
     if (response.statusCode == 200) {
+      print('Document đã được tạo với ID: $documentId');
       return true;
     } else {
       print('Lỗi khi tạo document trong queue: ${response.statusCode}');
@@ -110,11 +105,9 @@ class AuthenticationService {
     }
   }
 
-  // Tạo tài liệu trong collection 'residents' hoặc 'thirdParties'
-  Future<bool> createUserDocument(String idToken, String uid,
-      Map<String, dynamic> userData, String collection) async {
-    final url =
-        'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/$collection/$uid?key=$apiKey';
+  // Tạo tài liệu trong collection 'residents' hoặc 'guests'
+  Future<bool> createUserDocument(String idToken, String uid, Map<String, dynamic> userData, String collection) async {
+    final url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/$collection/$uid?key=$apiKey';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -123,8 +116,7 @@ class AuthenticationService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'fields':
-            userData.map((key, value) => MapEntry(key, encodeField(value))),
+        'fields': userData.map((key, value) => MapEntry(key, encodeField(value))),
       }),
     );
 
@@ -138,7 +130,6 @@ class AuthenticationService {
   }
 
   // Xóa tài liệu từ collection 'queue'
-// Thêm phương thức deleteQueueDocument nếu chưa có
   Future<bool> deleteQueueDocument(String documentName, String idToken) async {
     final url = 'https://firestore.googleapis.com/v1/$documentName?key=$apiKey';
 
@@ -154,6 +145,37 @@ class AuthenticationService {
       return true;
     } else {
       print('Lỗi khi xóa document từ queue: ${response.statusCode}');
+      print('Chi tiết lỗi: ${response.body}');
+      return false;
+    }
+  }
+
+  // Cập nhật tài liệu trong collection 'queue'
+  Future<bool> updateQueueDocument(String documentName, Map<String, dynamic> updatedData, String idToken, List<String> fieldPaths // Thêm tham số này
+      ) async {
+    // Xây dựng updateMask.fieldPaths từ danh sách fieldPaths
+    final updateMask = {
+      'fieldPaths': fieldPaths,
+    };
+
+    final url = 'https://firestore.googleapis.com/v1/$documentName?key=$apiKey';
+
+    final response = await http.patch(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'fields': updatedData.map((key, value) => MapEntry(key, encodeField(value))),
+        'updateMask': updateMask, // Thêm updateMask vào body
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print('Lỗi khi cập nhật document trong queue: ${response.statusCode}');
       print('Chi tiết lỗi: ${response.body}');
       return false;
     }

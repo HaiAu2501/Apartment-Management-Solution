@@ -7,6 +7,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  // Khai báo apiKey và projectId của dự án Firebase để thao tác với Hệ quản trị Cơ sở dữ liệu Firestore
   final String apiKey = 'AIzaSyBtspfJdmslGCkv5MvWu9gkMYuLNwvfzKU';
   final String projectId = 'apartment-management-solution';
 
@@ -14,11 +15,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Khởi tạo Dịch vụ xác thực
     final authService = AuthenticationService(apiKey: apiKey, projectId: projectId);
 
     return MaterialApp(
       title: 'Quản Lý Chung Cư',
       theme: ThemeData(primarySwatch: Colors.blue),
+      // Trang mở đầu của ứng dụng là trang đăng nhập
       home: LoginPage(authService: authService),
     );
   }

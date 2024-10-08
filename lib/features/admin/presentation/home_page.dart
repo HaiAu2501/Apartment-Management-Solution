@@ -14,11 +14,11 @@ class AdminHomePage extends StatefulWidget {
   final String uid;
 
   const AdminHomePage({
-    Key? key,
+    super.key,
     required this.authService,
     required this.idToken,
     required this.uid,
-  }) : super(key: key);
+  });
 
   @override
   _AdminHomePageState createState() => _AdminHomePageState();
@@ -119,8 +119,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
         color: Colors.black,
       ),
       itemSpaceBetween: 12,
-      itemSelectedColor: Color.fromRGBO(161, 214, 178, 1),
-      itemHoverColor: Color.fromRGBO(161, 214, 178, 0.25),
+      itemSelectedColor: const Color.fromRGBO(161, 214, 178, 1),
+      itemHoverColor: const Color.fromRGBO(161, 214, 178, 0.25),
       itemSelectedBorder: BorderRadius.circular(8),
       itemMargin: 12,
       switchIconExpanded: Icons.arrow_back_ios_new,
@@ -156,12 +156,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color.fromARGB(255, 142, 254, 142),
-                    const Color.fromARGB(255, 255, 250, 152),
+                    Color.fromARGB(255, 142, 254, 142),
+                    Color.fromARGB(255, 255, 250, 152),
                   ],
                 ),
               ),
@@ -174,8 +174,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     size: 40,
                     color: Colors.red,
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
+                  SizedBox(height: 10),
+                  Text(
                     'QUẢN TRỊ VIÊN',
                     style: TextStyle(
                       color: Colors.red,
@@ -190,7 +190,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               SidebarItem item = entry.value;
 
               return ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: 25.0, vertical: 4.0), // Tùy chỉnh padding
+                contentPadding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 4.0), // Tùy chỉnh padding
                 title: Row(
                   children: [
                     Icon(
@@ -198,7 +198,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       color: Colors.grey[850],
                       size: 24,
                     ),
-                    SizedBox(width: 25), // Khoảng cách giữa icon và text
+                    const SizedBox(width: 25), // Khoảng cách giữa icon và text
                     Text(
                       item.text,
                       style: const TextStyle(color: Color.fromRGBO(0, 0, 0, 1)),
@@ -210,7 +210,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   _onSelectItem(index);
                 },
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -281,7 +281,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
 // Widget cho Trang Chủ trống
 class EmptyPage extends StatelessWidget {
-  const EmptyPage({Key? key}) : super(key: key);
+  const EmptyPage({super.key});
 
   @override
   Widget build(BuildContext context) {

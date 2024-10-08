@@ -4,6 +4,7 @@ import 'login_page.dart';
 import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày tháng
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 
 class ResidentInfoPage extends StatefulWidget {
   final AuthenticationService authService;
@@ -60,60 +61,36 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
     String id = idController.text.trim();
     String floor = floorController.text.trim();
     String apartmentNumber = apartmentNumberController.text.trim();
+    String password = widget.password; // Sử dụng mật khẩu người dùng nhập
+
+    // Tạo dữ liệu để gửi lên queue
+    Map<String, dynamic> queueData = {
+      'fullName': fullName,
+      'gender': gender,
+      'dob': dobFormatted, // Định dạng: DD/MM/YYYY
+      'phone': phone,
+      'id': id,
+      'floor': int.parse(floor),
+      'apartmentNumber': int.parse(apartmentNumber),
+      'email': widget.email,
+      'password': password, // Thêm trường password
+      'role': 'Cư dân',
+      'status': 'Chờ duyệt',
+      'requestId': Uuid().v4(), // Tạo requestId làm documentID
+    };
 
     try {
-      // Đăng ký người dùng
-      String? idToken = await widget.authService.signUp(widget.email, widget.password);
-      if (idToken != null) {
-        // Lấy UID của người dùng
-        String? uid = await widget.authService.getUserUid(idToken);
-        if (uid != null) {
-          // Tạo dữ liệu để gửi lên queue
-          Map<String, dynamic> queueData = {
-            'fullName': fullName,
-            'gender': gender,
-            'dob': dobFormatted, // Định dạng: DD/MM/YYYY
-            'phone': phone,
-            'id': id,
-            'uid': uid,
-            'floor': int.parse(floor),
-            'apartmentNumber': int.parse(apartmentNumber),
-            'email': widget.email,
-            'role': 'Cư dân',
-            'status': 'Chờ duyệt',
-          };
+      // Tạo document trong collection 'queue'
+      bool success = await widget.authService.createQueueDocument(queueData);
 
-          // Tạo document trong collection 'queue'
-          bool success = await widget.authService.createQueueDocument(idToken, queueData);
-
-          if (success) {
-            setState(() {
-              message = 'Đăng ký thông tin thành công. Đang chờ admin phê duyệt.';
-              isLoading = false;
-            });
-            // Chuyển hướng về trang đăng nhập sau khi thành công
-            // Navigator.pushReplacement(
-            //   context,
-            //   MaterialPageRoute(
-            //     builder: (context) =>
-            //         LoginPage(authService: widget.authService),
-            //   ),
-            // );
-          } else {
-            setState(() {
-              message = 'Đăng ký thông tin thất bại.';
-              isLoading = false;
-            });
-          }
-        } else {
-          setState(() {
-            message = 'Không lấy được UID người dùng.';
-            isLoading = false;
-          });
-        }
+      if (success) {
+        setState(() {
+          message = 'Đăng ký thông tin thành công. Đang chờ admin phê duyệt.';
+          isLoading = false;
+        });
       } else {
         setState(() {
-          message = 'Đăng ký thất bại.';
+          message = 'Đăng ký thông tin thất bại.';
           isLoading = false;
         });
       }
