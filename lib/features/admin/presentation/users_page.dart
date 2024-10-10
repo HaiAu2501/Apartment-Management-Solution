@@ -42,7 +42,7 @@ class _UsersPageState extends State<UsersPage> {
       apiKey: widget.authService.apiKey,
       projectId: widget.authService.projectId,
     );
-    print('adminRepository initialized');
+    // print('adminRepository initialized');
     fetchQueue();
     fetchResidents();
     fetchGuests();
@@ -190,7 +190,7 @@ class _UsersPageState extends State<UsersPage> {
 
   // Hàm hiển thị thông báo
   Widget buildMessage() {
-    if (message == null) return SizedBox.shrink();
+    if (message == null) return const SizedBox.shrink();
     return Text(
       message!,
       style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
@@ -410,7 +410,7 @@ class EditUserForm extends StatefulWidget {
   final Map<String, dynamic> initialData;
   final Function(Map<String, dynamic>) onSave;
 
-  const EditUserForm({Key? key, required this.initialData, required this.onSave}) : super(key: key);
+  const EditUserForm({super.key, required this.initialData, required this.onSave});
 
   @override
   _EditUserFormState createState() => _EditUserFormState();
@@ -470,7 +470,7 @@ class _EditUserFormState extends State<EditUserForm> {
             };
 
             // **Debug:** In dữ liệu trước khi gửi
-            print('Updated Data: $updatedData');
+            // print('Updated Data: $updatedData');
 
             widget.onSave(updatedData);
           },

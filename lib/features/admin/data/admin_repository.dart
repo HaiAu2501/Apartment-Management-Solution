@@ -1,7 +1,6 @@
 // lib/features/admin/data/admin_repository.dart
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:uuid/uuid.dart';
 import '../../.authentication/data/auth_service.dart';
 
 class AdminRepository {
@@ -158,10 +157,10 @@ class AdminRepository {
     final url = 'https://firestore.googleapis.com/v1/$documentName?key=$apiKey&$updateMask';
 
     // **Debug:** In URL và payload
-    print('Update URL: $url');
-    print('Payload: ${jsonEncode({
-          'fields': updatedData.map((key, value) => MapEntry(key, _encodeField(value))),
-        })}');
+    // print('Update URL: $url');
+    // print('Payload: ${jsonEncode({
+    //       'fields': updatedData.map((key, value) => MapEntry(key, _encodeField(value))),
+    //     })}');
 
     final response = await http.patch(
       Uri.parse(url),
@@ -175,8 +174,8 @@ class AdminRepository {
     );
 
     // **Debug:** In phản hồi từ Firestore
-    print('Response Status: ${response.statusCode}');
-    print('Response Body: ${response.body}');
+    // print('Response Status: ${response.statusCode}');
+    // print('Response Body: ${response.body}');
 
     if (response.statusCode == 200) {
       // Cập nhật thành công
