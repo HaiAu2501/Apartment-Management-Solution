@@ -20,7 +20,13 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Quản Lý Chung Cư',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primaryColor: Colors.blue,
+        scaffoldBackgroundColor: Colors.white, // Màu nền cho các trang
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.blue, // Màu nền của AppBar
+        ),
+      ),
       // Trang mở đầu của ứng dụng là trang đăng nhập
       home: LoginPage(authService: authService),
     );

@@ -233,7 +233,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 Expanded(
                   child: Scaffold(
                     appBar: AppBar(
-                      title: const Text('Trang Chủ Admin'),
+                      title: const Text('Trang chủ Quản trị viên'),
                       backgroundColor: Colors.white,
                       actions: [
                         IconButton(
