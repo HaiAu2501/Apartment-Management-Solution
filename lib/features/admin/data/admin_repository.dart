@@ -1,7 +1,6 @@
 // lib/features/admin/data/admin_repository.dart
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:uuid/uuid.dart';
 import '../../.authentication/data/auth_service.dart';
 
 class AdminRepository {
@@ -10,25 +9,42 @@ class AdminRepository {
 
   AdminRepository({required this.apiKey, required this.projectId});
 
-  // Hàm lấy danh sách chờ duyệt
-  Future<List<dynamic>> fetchQueue(String idToken) async {
-    final url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/queue?key=$apiKey';
+  // Hàm lấy tất cả danh sách chờ duyệt với phân trang
+  Future<List<dynamic>> fetchAllQueue(String idToken) async {
+    List<dynamic> allDocuments = [];
+    String? nextPageToken;
+    const int pageSize = 100; // Firestore REST API có giới hạn tối đa pageSize là 100
 
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'Authorization': 'Bearer $idToken',
-        'Content-Type': 'application/json',
-      },
-    );
+    do {
+      // Tạo URL với các tham số phân trang và sắp xếp
+      String url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/queue?key=$apiKey&pageSize=$pageSize&orderBy=fullName';
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['documents'] ?? [];
-    } else {
-      throw Exception('Lỗi khi tải queue: ${response.statusCode} ${response.body}');
-    }
+      if (nextPageToken != null && nextPageToken.isNotEmpty) {
+        url += '&pageToken=$nextPageToken';
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $idToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final documents = data['documents'] ?? [];
+        allDocuments.addAll(documents);
+        nextPageToken = data['nextPageToken'];
+      } else {
+        throw Exception('Lỗi khi tải queue: ${response.statusCode} ${response.body}');
+      }
+    } while (nextPageToken != null);
+
+    return allDocuments;
   }
+
+  // Các phương thức khác không thay đổi...
 
   // Hàm lấy danh sách cư dân
   Future<List<dynamic>> fetchResidents(String idToken) async {
@@ -158,10 +174,10 @@ class AdminRepository {
     final url = 'https://firestore.googleapis.com/v1/$documentName?key=$apiKey&$updateMask';
 
     // **Debug:** In URL và payload
-    print('Update URL: $url');
-    print('Payload: ${jsonEncode({
-          'fields': updatedData.map((key, value) => MapEntry(key, _encodeField(value))),
-        })}');
+    // print('Update URL: $url');
+    // print('Payload: ${jsonEncode({
+    //       'fields': updatedData.map((key, value) => MapEntry(key, _encodeField(value))),
+    //     })}');
 
     final response = await http.patch(
       Uri.parse(url),
@@ -175,8 +191,8 @@ class AdminRepository {
     );
 
     // **Debug:** In phản hồi từ Firestore
-    print('Response Status: ${response.statusCode}');
-    print('Response Body: ${response.body}');
+    // print('Response Status: ${response.statusCode}');
+    // print('Response Body: ${response.body}');
 
     if (response.statusCode == 200) {
       // Cập nhật thành công
