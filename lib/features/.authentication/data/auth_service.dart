@@ -1,10 +1,14 @@
+// lib/features/authentication/data/auth_service.dart
+
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthenticationService {
   final String apiKey;
   final String projectId;
+  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   AuthenticationService({required this.apiKey, required this.projectId});
 
@@ -23,7 +27,9 @@ class AuthenticationService {
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
-      return responseData['idToken'];
+      String idToken = responseData['idToken'];
+      await setIdToken(idToken); // Lưu idToken vào Secure Storage
+      return idToken;
     } else {
       print('Lỗi khi đăng ký: ${response.statusCode}');
       print('Chi tiết lỗi: ${response.body}');
@@ -46,7 +52,9 @@ class AuthenticationService {
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
-      return responseData['idToken'];
+      String idToken = responseData['idToken'];
+      await setIdToken(idToken); // Lưu idToken vào Secure Storage
+      return idToken;
     } else {
       print('Lỗi khi đăng nhập: ${response.statusCode}');
       print('Chi tiết lỗi: ${response.body}');
@@ -151,8 +159,7 @@ class AuthenticationService {
   }
 
   // Cập nhật tài liệu trong collection 'queue'
-  Future<bool> updateQueueDocument(String documentName, Map<String, dynamic> updatedData, String idToken, List<String> fieldPaths // Thêm tham số này
-      ) async {
+  Future<bool> updateQueueDocument(String documentName, Map<String, dynamic> updatedData, String idToken, List<String> fieldPaths) async {
     // Xây dựng updateMask.fieldPaths từ danh sách fieldPaths
     final updateMask = {
       'fieldPaths': fieldPaths,
@@ -203,8 +210,27 @@ class AuthenticationService {
           'fields': value.map((k, v) => MapEntry(k, encodeField(v))),
         }
       };
+    } else if (value is DateTime) {
+      return {'timestampValue': value.toIso8601String()};
     } else {
       return {};
     }
+  }
+
+  // *** Các Hàm Mới Được Thêm Vào ***
+
+  /// Lưu trữ ID Token vào Secure Storage
+  Future<void> setIdToken(String token) async {
+    await secureStorage.write(key: 'idToken', value: token);
+  }
+
+  /// Lấy ID Token từ Secure Storage
+  Future<String?> getIdToken() async {
+    return await secureStorage.read(key: 'idToken');
+  }
+
+  /// Xóa ID Token khỏi Secure Storage
+  Future<void> clearIdToken() async {
+    await secureStorage.delete(key: 'idToken');
   }
 }

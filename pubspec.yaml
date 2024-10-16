@@ -22,6 +22,7 @@ dependencies:
   intl: ^0.17.0
   animated_sidebar: ^1.0.0
   uuid: ^4.0.0
+  table_calendar: ^3.0.8
 
 # List of packages that the project depends on for development
 dev_dependencies:
