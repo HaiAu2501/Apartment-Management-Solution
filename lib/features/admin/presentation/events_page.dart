@@ -279,7 +279,7 @@ class _EventsPageState extends State<EventsPage> {
                   'organizer': organizerController.text,
                   'participants': participantsController.text,
                   'location': locationController.text,
-                  'date': selectedDate.toIso8601String(),
+                  'date': selectedDate,
                 };
 
                 try {
@@ -472,31 +472,7 @@ class _EventsPageState extends State<EventsPage> {
     List<EventWithDate> pastEvents = _getPastEvents();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản Lý Sự Kiện'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              try {
-                await authService.clearIdToken(); // Xóa idToken khỏi Secure Storage
-                // Điều hướng người dùng về trang đăng nhập hoặc bất kỳ nơi nào khác
-                if (mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              } catch (e) {
-                print('Error logging out: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error logging out: $e')),
-                  );
-                }
-              }
-            },
-            tooltip: 'Đăng xuất',
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Quản Lý Sự Kiện')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : LayoutBuilder(
