@@ -78,7 +78,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
       ), // 2: Người dùng
       const FeesPage(), // 3: Phí và Tài chính
       const ComplaintsPage(), // 4: Tiện ích và Khiếu nại
-      const EventsPage(), // 5: Sự kiện
+      EventsPage(
+        authService: widget.authService,
+      ), // 5: Sự kiện
       // 6: Đăng xuất sẽ được xử lý riêng
     ];
   }

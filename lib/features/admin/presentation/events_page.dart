@@ -3,96 +3,26 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import '../domain/events.dart';
 import '../../.authentication/data/auth_service.dart';
 import '../data/events_repository.dart';
-
-class Event {
-  String id; // Document ID in Firestore
-  String title;
-  String content;
-  String organizer;
-  String participants;
-  String location;
-  DateTime date;
-
-  Event({
-    required this.id,
-    required this.title,
-    required this.content,
-    required this.organizer,
-    required this.participants,
-    required this.location,
-    required this.date,
-  });
-
-  /// Factory method để tạo Event từ tài liệu Firestore
-  factory Event.fromFirestore(Map<String, dynamic> data, String documentId) {
-    try {
-      String? timestamp = data['date']?['timestampValue'];
-      DateTime parsedDate = timestamp != null
-          ? DateTime.parse(timestamp).toLocal() // Chuyển đổi sang múi giờ địa phương
-          : DateTime.now();
-
-      return Event(
-        id: documentId,
-        title: data['title']?['stringValue'] ?? '',
-        content: data['content']?['stringValue'] ?? '',
-        organizer: data['organizer']?['stringValue'] ?? '',
-        participants: data['participants']?['stringValue'] ?? '',
-        location: data['location']?['stringValue'] ?? '',
-        date: parsedDate,
-      );
-    } catch (e) {
-      return Event(
-        id: documentId,
-        title: 'Error',
-        content: '',
-        organizer: '',
-        participants: '',
-        location: '',
-        date: DateTime.now(),
-      );
-    }
-  }
-
-  /// Chuyển đổi Event thành các trường Firestore
-  Map<String, dynamic> toFirestore() {
-    return {
-      'title': {'stringValue': title},
-      'content': {'stringValue': content},
-      'organizer': {'stringValue': organizer},
-      'participants': {'stringValue': participants},
-      'location': {'stringValue': location},
-      'date': {'timestampValue': date.toUtc().toIso8601String()},
-    };
-  }
-}
-
-class EventWithDate {
-  final Event event;
-  final DateTime date;
-
-  EventWithDate({required this.event, required this.date});
-}
+import 'widgets/event_box.dart';
+import 'widgets/daily_event_box.dart';
 
 class EventsPage extends StatefulWidget {
-  const EventsPage({super.key});
+  final AuthenticationService authService;
+  const EventsPage({
+    super.key,
+    required this.authService,
+  });
 
   @override
   _EventsPageState createState() => _EventsPageState();
 }
 
 class _EventsPageState extends State<EventsPage> {
-  // Khởi tạo EventsRepository với thông tin dự án Firebase của bạn
-  final EventsRepository eventsRepository = EventsRepository(
-    apiKey: 'AIzaSyBtspfJdmslGCkv5MvWu9gkMYuLNwvfzKU', // Thay thế bằng API Key thực tế
-    projectId: 'apartment-management-solution', // Thay thế bằng Project ID thực tế
-  );
-
-  final AuthenticationService authService = AuthenticationService(
-    apiKey: 'AIzaSyBtspfJdmslGCkv5MvWu9gkMYuLNwvfzKU', // Thay thế bằng API Key thực tế
-    projectId: 'apartment-management-solution', // Thay thế bằng Project ID thực tế
-  );
+  late final EventsRepository eventsRepository;
+  late final AuthenticationService authService; // Added local variable
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -106,6 +36,11 @@ class _EventsPageState extends State<EventsPage> {
   @override
   void initState() {
     super.initState();
+    authService = widget.authService; // Initialize local authService
+    eventsRepository = EventsRepository(
+      apiKey: authService.apiKey, // Sử dụng authService đã được định nghĩa
+      projectId: authService.projectId,
+    );
     _fetchEvents(); // Lấy sự kiện khi trang khởi tạo
   }
 
@@ -474,9 +409,9 @@ class _EventsPageState extends State<EventsPage> {
   Widget build(BuildContext context) {
     // Lấy chiều rộng màn hình
     double screenWidth = MediaQuery.of(context).size.width;
-    bool isSmallScreen = screenWidth <= 1000;
-    bool isMediumScreen = screenWidth > 1000 && screenWidth <= 1500;
-    bool isWideScreen = screenWidth > 1500;
+    bool isSmallScreen = screenWidth <= 600;
+    bool isMediumScreen = screenWidth > 600 && screenWidth <= 900;
+    bool isWideScreen = screenWidth > 900;
 
     List<EventWithDate> upcomingEvents = _getUpcomingEvents();
     List<EventWithDate> pastEvents = _getPastEvents();
@@ -630,7 +565,7 @@ class _EventsPageState extends State<EventsPage> {
                                 title: 'Sự kiện sắp tới',
                                 count: upcomingEventCount,
                                 events: upcomingEvents,
-                                emptyMessage: 'Không có sự kiện sắp tới',
+                                emptyMessage: '',
                                 onEventTap: (event) {
                                   // Thêm chức năng xem chi tiết sự kiện tại đây nếu cần
                                 },
@@ -644,7 +579,7 @@ class _EventsPageState extends State<EventsPage> {
                                 title: 'Sự kiện đã qua',
                                 count: pastEventCount,
                                 events: pastEvents,
-                                emptyMessage: 'Không có sự kiện đã qua',
+                                emptyMessage: '',
                                 onEventTap: (event) {
                                   // Thêm chức năng xem chi tiết sự kiện tại đây nếu cần
                                 },
@@ -801,270 +736,6 @@ class _EventsPageState extends State<EventsPage> {
           ],
         );
       },
-    );
-  }
-}
-
-/// Widget để hiển thị hộp sự kiện với thống kê
-class EventBox extends StatelessWidget {
-  final String title;
-  final int count;
-  final List<EventWithDate> events;
-  final String emptyMessage;
-  final Function(Event) onEventTap;
-  final Function(Event) onEdit;
-  final Function(Event) onDelete;
-  final String screenSize; // 'wide', 'medium', 'small'
-
-  const EventBox({
-    Key? key,
-    required this.title,
-    required this.count,
-    required this.events,
-    required this.emptyMessage,
-    required this.onEventTap,
-    required this.onEdit,
-    required this.onDelete,
-    required this.screenSize,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    // Determine button layout based on screen size
-    bool isMediumScreen = screenSize == 'medium';
-    bool isWideScreen = screenSize == 'wide';
-    bool isSmallScreen = screenSize == 'small';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white, // Màu nền trắng
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16.0),
-      width: double.infinity, // Ensure full width
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Tiêu đề và thống kê
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4.0),
-              Text(
-                count > 0 ? (title == 'Sự kiện sắp tới' ? 'Trong 30 ngày sắp tới: $count sự kiện' : 'Trong 30 ngày đã qua: $count sự kiện') : (title == 'Sự kiện sắp tới' ? 'Trong 30 ngày sắp tới: 0 sự kiện' : 'Trong 30 ngày đã qua: 0 sự kiện'),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8.0),
-          // Danh sách sự kiện
-          events.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text(emptyMessage),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: events.length,
-                  itemBuilder: (context, index) {
-                    final eventWithDate = events[index];
-                    return ListTile(
-                      leading: const Icon(Icons.event),
-                      title: isMediumScreen || isSmallScreen
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  eventWithDate.event.title,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                                const SizedBox(height: 4.0),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
-                                      onPressed: () {
-                                        onEdit(eventWithDate.event);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                      onPressed: () {
-                                        onDelete(eventWithDate.event);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            )
-                          : Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    eventWithDate.event.title,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.blue),
-                                  onPressed: () {
-                                    onEdit(eventWithDate.event);
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () {
-                                    onDelete(eventWithDate.event);
-                                  },
-                                ),
-                              ],
-                            ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Thời gian: ${DateFormat('dd/MM/yyyy').format(eventWithDate.date)}'),
-                          Text('Địa điểm: ${eventWithDate.event.location}'),
-                        ],
-                      ),
-                      onTap: () {
-                        onEventTap(eventWithDate.event);
-                      },
-                    );
-                  },
-                ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Widget để hiển thị danh sách sự kiện cho ngày được chọn
-class DailyEventBox extends StatelessWidget {
-  final DateTime selectedDay;
-  final List<Event> events;
-  final Function(Event) onEdit;
-  final Function(Event) onDelete;
-
-  const DailyEventBox({
-    Key? key,
-    required this.selectedDay,
-    required this.events,
-    required this.onEdit,
-    required this.onDelete,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    String formattedDate = DateFormat('dd/MM/yyyy').format(selectedDay);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.blue[50], // Màu nền xanh dương nhẹ
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16.0),
-      width: double.infinity, // Ensure full width
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Tiêu đề
-          Text(
-            'Sự kiện ngày $formattedDate',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8.0),
-          // Danh sách sự kiện
-          events.isEmpty
-              ? const Center(
-                  child: Text('Không có sự kiện nào trong ngày này.'),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: events.length,
-                  itemBuilder: (context, index) {
-                    final event = events[index];
-                    return ExpansionTile(
-                      leading: const Icon(Icons.event),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              event.title,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () {
-                              onEdit(event);
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              onDelete(event);
-                            },
-                          ),
-                        ],
-                      ),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Nội dung: ${event.content}'),
-                              const SizedBox(height: 4),
-                              Text('Người tổ chức: ${event.organizer}'),
-                              const SizedBox(height: 4),
-                              Text('Thành phần tham dự: ${event.participants}'),
-                              const SizedBox(height: 4),
-                              Text('Địa điểm: ${event.location}'),
-                              const SizedBox(height: 4),
-                              Text('Thời gian: ${DateFormat('dd/MM/yyyy').format(event.date)}'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-        ],
-      ),
     );
   }
 }

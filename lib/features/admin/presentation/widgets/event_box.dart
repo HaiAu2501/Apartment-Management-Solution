@@ -97,22 +97,7 @@ class EventBox extends StatelessWidget {
                                   maxLines: 1,
                                 ),
                                 const SizedBox(height: 4.0),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
-                                      onPressed: () {
-                                        onEdit(eventWithDate.event);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                      onPressed: () {
-                                        onDelete(eventWithDate.event);
-                                      },
-                                    ),
-                                  ],
-                                ),
+                                Row(),
                               ],
                             )
                           : Row(
@@ -123,18 +108,6 @@ class EventBox extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                   ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.blue),
-                                  onPressed: () {
-                                    onEdit(eventWithDate.event);
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () {
-                                    onDelete(eventWithDate.event);
-                                  },
                                 ),
                               ],
                             ),
