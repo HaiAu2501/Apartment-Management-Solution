@@ -7,6 +7,7 @@ import 'dashboard_page.dart';
 import 'events_page.dart';
 import 'fees_page.dart';
 import 'users_page.dart';
+import 'complaints_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   final AuthenticationService authService;
@@ -51,6 +52,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
       icon: Icons.payment_outlined,
     ),
     SidebarItem(
+      text: 'Khiếu nại',
+      icon: Icons.mail_outlined,
+    ),
+    SidebarItem(
       text: 'Sự kiện',
       icon: Icons.event_outlined,
     ),
@@ -72,8 +77,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
         uid: widget.uid,
       ), // 2: Người dùng
       const FeesPage(), // 3: Phí và Tài chính
-      const EventsPage(), // 4: Sự kiện
-      // 5: Đăng xuất sẽ được xử lý riêng
+      const ComplaintsPage(), // 4: Tiện ích và Khiếu nại
+      const EventsPage(), // 5: Sự kiện
+      // 6: Đăng xuất sẽ được xử lý riêng
     ];
   }
 
@@ -89,7 +95,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   // Hàm xử lý khi chọn một mục trong sidebar hoặc drawer
   void _onSelectItem(int index) {
-    if (index == 5) {
+    if (index == 6) {
       // Đăng xuất
       logout();
     } else {
