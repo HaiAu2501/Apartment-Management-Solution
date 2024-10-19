@@ -474,9 +474,9 @@ class _EventsPageState extends State<EventsPage> {
   Widget build(BuildContext context) {
     // Lấy chiều rộng màn hình
     double screenWidth = MediaQuery.of(context).size.width;
-    bool isSmallScreen = screenWidth <= 600;
-    bool isMediumScreen = screenWidth > 600 && screenWidth <= 900;
-    bool isWideScreen = screenWidth > 900;
+    bool isSmallScreen = screenWidth <= 1000;
+    bool isMediumScreen = screenWidth > 1000 && screenWidth <= 1500;
+    bool isWideScreen = screenWidth > 1500;
 
     List<EventWithDate> upcomingEvents = _getUpcomingEvents();
     List<EventWithDate> pastEvents = _getPastEvents();
@@ -508,7 +508,7 @@ class _EventsPageState extends State<EventsPage> {
                                       title: 'Sự kiện sắp tới',
                                       count: upcomingEventCount,
                                       events: upcomingEvents,
-                                      emptyMessage: 'Không có sự kiện sắp tới',
+                                      emptyMessage: '',
                                       onEventTap: (event) {
                                         // Thêm chức năng xem chi tiết sự kiện tại đây nếu cần
                                       },
@@ -526,7 +526,7 @@ class _EventsPageState extends State<EventsPage> {
                                       title: 'Sự kiện đã qua',
                                       count: pastEventCount,
                                       events: pastEvents,
-                                      emptyMessage: 'Không có sự kiện đã qua',
+                                      emptyMessage: '',
                                       onEventTap: (event) {
                                         // Thêm chức năng xem chi tiết sự kiện tại đây nếu cần
                                       },
