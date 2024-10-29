@@ -27,7 +27,7 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
   int? _expandedIndex;
 
   //chiều cao cố định
-  final double fixedHeight = 280.0;
+  final double fixedHeight = 230.0;
 
   @override
   void initState() {
@@ -69,7 +69,6 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
         return Colors.yellow[200]!;
 
       // **Partly Cloudy Conditions**
-      case 'partly cloudy':
       case 'patchy rain nearby':
       case 'patchy light drizzle':
       case 'patchy light rain':
@@ -83,11 +82,12 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
 
       // **Cloudy and Foggy Conditions**
       case 'cloudy':
+      case 'partly cloudy':
       case 'có mây':
       case 'overcast':
       case 'fog':
       case 'freezing fog':
-        return Colors.grey[300]!;
+        return const Color.fromARGB(255, 63, 55, 55)!;
 
       // **Rain Conditions**
       case 'light drizzle':
@@ -161,7 +161,7 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
     return LayoutBuilder(builder: (context, constraints) {
       // Tính toán chiều rộng container dựa trên kích thước màn hình
       double screenWidth = constraints.maxWidth;
-      double containerWidth = screenWidth > 600 ? 180 : 140; // Giảm từ 200 xuống 180 và từ 160 xuống 140
+      double containerWidth = screenWidth > 600 ? 190 : 150; // Giảm từ 200 xuống 180 và từ 160 xuống 140
 
       return Container(
         color: Colors.blueGrey[50], // Màu nền tổng thể
@@ -228,12 +228,13 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
-                        width: containerWidth + 16.0 + (_expandedIndex == index ? 200 + 16.0 : 0), // Added extra 16.0 for spacing
+                        width: containerWidth + (_expandedIndex == index ? 200 + 16.0 : 8),
                         child: Stack(
+                          clipBehavior: Clip.none, // Thêm dòng này
                           children: [
                             if (_expandedIndex == index)
                               Positioned(
-                                left: containerWidth + 16.0, // Added extra 16.0 for spacing
+                                left: containerWidth + 7.5,
                                 top: 0,
                                 child: WeatherDetail(
                                   forecast: forecast,
@@ -260,7 +261,6 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
                                   isExpanded: _expandedIndex == index,
                                   fixedHeight: fixedHeight,
                                 ),
-                                const SizedBox(width: 16.0), // Existing spacing between WeatherBox and next item
                               ],
                             ),
                           ],
@@ -335,16 +335,18 @@ class WeatherBox extends StatelessWidget {
 
     return Container(
       width: containerWidth,
-      padding: const EdgeInsets.all(10.0), // Tăng padding để bố cục hợp lý hơn
+      padding: const EdgeInsets.all(0.0), // Đảm bảo không có padding
       height: fixedHeight, // Chiều cao cố định để match parent
       decoration: BoxDecoration(
         color: backgroundColor, // Màu nền động
         border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12.0), // Bo góc đẹp mắt
+        borderRadius: BorderRadius.circular(0.0), // Bo góc đẹp mắt
       ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center, // Căn giữa theo chiều dọc
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Cột mở rộng để chiếm không gian còn lại
+          // Nội dung chính
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center, // Căn giữa theo chiều dọc
@@ -382,14 +384,15 @@ class WeatherBox extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 0),
                 // Icon thời tiết
                 weatherIcon,
               ],
             ),
           ),
-          // Nút mũi tên
+          // Nút mũi tên đặt bên dưới
           arrowButton,
+          const SizedBox(height: 12)
         ],
       ),
     );
@@ -447,7 +450,7 @@ class _WeatherDetailState extends State<WeatherDetail> with SingleTickerProvider
       position: _detailSlideAnimation,
       child: Material(
         elevation: 4.0,
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(0.0),
         child: SizedBox(
           width: 200,
           height: widget.fixedHeight,
@@ -509,18 +512,11 @@ class WeatherDetailContent extends StatelessWidget {
       width: 200,
       height: fixedHeight, // Chiều cao cố định giống như các ô chính
       padding: const EdgeInsets.all(12.0), // Giảm từ 16.0 xuống 12.0
-      margin: const EdgeInsets.only(left: 12.0), // Tăng từ 8.0 xuống 12.0 để tạo khoảng cách lớn hơn
+      margin: const EdgeInsets.all(0), // Tăng từ 8.0 xuống 12.0 để tạo khoảng cách lớn hơn
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12.0), // Bo góc đẹp mắt
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 6.0,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(0.0), // Bo góc đẹp mắt
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,12 +542,12 @@ class WeatherDetailContent extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 0),
           // Bảng thông tin chi tiết
           Table(
             columnWidths: const {
-              0: FlexColumnWidth(1),
-              1: FlexColumnWidth(1),
+              0: FlexColumnWidth(5),
+              1: FlexColumnWidth(6),
             },
             children: [
               _buildTableRow('Nhiệt độ thấp nhất:', '${forecast.minTempC.toStringAsFixed(1)}°C'),
