@@ -1,6 +1,7 @@
 // admin/home/home_page.dart
+
 import 'package:flutter/material.dart';
-import 'package:animated_sidebar/animated_sidebar.dart'; // Import thư viện animated_sidebar
+import 'package:animated_sidebar/animated_sidebar.dart';
 import '../../.authentication/data/auth_service.dart';
 import '../../.authentication/presentation/login_page.dart';
 import 'dashboard_page.dart';
@@ -8,6 +9,7 @@ import 'events_page.dart';
 import 'fees_page.dart';
 import 'users_page.dart';
 import 'complaints_page.dart';
+import 'widgets/weather.dart'; // Updated import
 
 class AdminHomePage extends StatefulWidget {
   final AuthenticationService authService;
@@ -26,13 +28,9 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-  // Chỉ số để quản lý trang hiện tại
   int _selectedIndex = 0;
-
-  // Danh sách các trang tương ứng với sidebar
   late final List<Widget> _pages;
 
-  // Danh sách các mục trong sidebar
   final List<SidebarItem> _sidebarItems = [
     SidebarItem(
       text: 'Trang chủ',
@@ -45,7 +43,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     SidebarItem(
       text: 'Người dùng',
       icon: Icons.person_outline,
-      // Loại bỏ phần children để UsersPage không có child side_items
     ),
     SidebarItem(
       text: 'Phí và Tài chính',
@@ -85,7 +82,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     ];
   }
 
-  // Hàm logout
+  /// Logout function
   Future<void> logout() async {
     Navigator.pushReplacement(
       context,
@@ -95,10 +92,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Hàm xử lý khi chọn một mục trong sidebar hoặc drawer
+  /// Handle sidebar item selection
   void _onSelectItem(int index) {
     if (index == 6) {
-      // Đăng xuất
+      // Logout
       logout();
     } else {
       setState(() {
@@ -107,15 +104,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   }
 
-  // Widget cho Sidebar với thiết kế đẹp hơn bằng animated_sidebar
+  /// Build the animated sidebar
   Widget _buildAnimatedSidebar() {
     return AnimatedSidebar(
       items: _sidebarItems,
       selectedIndex: _selectedIndex,
       onItemSelected: _onSelectItem,
-      minSize: 70, // Chiều rộng khi sidebar thu gọn
-      maxSize: 200, // Chiều rộng khi sidebar mở rộng
-      expanded: true, // Khởi tạo sidebar ở trạng thái mở rộng
+      minSize: 70,
+      maxSize: 200,
+      expanded: true,
       margin: const EdgeInsets.all(0),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -157,6 +154,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
+  /// Build the drawer for mobile layout
   Widget _buildDrawer() {
     return Drawer(
       child: Container(
@@ -198,7 +196,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               SidebarItem item = entry.value;
 
               return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 4.0), // Tùy chỉnh padding
+                contentPadding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 4.0),
                 title: Row(
                   children: [
                     Icon(
@@ -206,15 +204,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       color: Colors.grey[850],
                       size: 24,
                     ),
-                    const SizedBox(width: 25), // Khoảng cách giữa icon và text
+                    const SizedBox(width: 25),
                     Text(
                       item.text,
-                      style: const TextStyle(color: Color.fromRGBO(0, 0, 0, 1)),
+                      style: const TextStyle(color: Colors.black),
                     ),
                   ],
                 ),
                 onTap: () {
-                  Navigator.pop(context); // Đóng Drawer
+                  Navigator.pop(context); // Close Drawer
                   _onSelectItem(index);
                 },
               );
@@ -229,7 +227,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Đặt breakpoint ở 600 pixels
+        // Define breakpoint at 600 pixels
         if (constraints.maxWidth >= 600) {
           // Desktop layout
           return Scaffold(
@@ -237,7 +235,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               children: [
                 // Sidebar
                 _buildAnimatedSidebar(),
-                // Nội dung chính
+                // Main content
                 Expanded(
                   child: Scaffold(
                     appBar: AppBar(
@@ -261,7 +259,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
           // Mobile layout
           return Scaffold(
             appBar: AppBar(
-              // title: const Text('Trang Chủ Admin'),
               backgroundColor: Colors.white,
               leading: Builder(
                 builder: (context) => IconButton(
@@ -287,16 +284,26 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 }
 
-// Widget cho Trang Chủ trống
+/// Widget for Empty Home Page
 class EmptyPage extends StatelessWidget {
-  const EmptyPage({super.key});
+  const EmptyPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Trang chủ đang được phát triển...',
-        style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: const [
+            SizedBox(height: 20),
+            WeatherApiWidget(location: 'Hanoi'), // Updated widget
+            SizedBox(height: 20),
+            Text(
+              'Trang chủ đang được phát triển...',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }
