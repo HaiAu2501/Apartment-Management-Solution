@@ -1,6 +1,6 @@
 // lib/domain/events.dart
 
-import 'package:intl/intl.dart';
+
 
 class Event {
   final String id; // Document ID in Firestore

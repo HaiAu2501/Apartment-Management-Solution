@@ -77,7 +77,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         uid: widget.uid,
       ), // 2: Người dùng
       const FeesPage(), // 3: Phí và Tài chính
-      const ComplaintsPage(), // 4: Tiện ích và Khiếu nại
+       ComplaintsPage(authService: widget.authService,), // 4: Tiện ích và Khiếu nại
       EventsPage(
         authService: widget.authService,
       ), // 5: Sự kiện

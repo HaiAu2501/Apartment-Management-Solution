@@ -48,7 +48,7 @@ class EventsRepository {
         }
       } catch (e) {
         print('Exception in fetchAllEvents: $e');
-        throw e;
+        rethrow;
       }
     } while (nextPageToken != null);
 
@@ -76,7 +76,7 @@ class EventsRepository {
       }
     } catch (e) {
       print('Exception in fetchEventByName: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -103,7 +103,7 @@ class EventsRepository {
       }
     } catch (e) {
       print('Exception in addEvent: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -134,7 +134,7 @@ class EventsRepository {
       }
     } catch (e) {
       print('Exception in updateEvent: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -158,7 +158,7 @@ class EventsRepository {
       }
     } catch (e) {
       print('Exception in deleteEvent: $e');
-      throw e;
+      rethrow;
     }
   }
 

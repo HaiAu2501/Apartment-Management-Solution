@@ -23,6 +23,9 @@ dependencies:
   animated_sidebar: ^1.0.0
   uuid: ^4.0.0
   table_calendar: ^3.0.8
+  fluentui_system_icons: ^1.1.261
+
+  
 
 # List of packages that the project depends on for development
 dev_dependencies:
@@ -35,3 +38,4 @@ flutter:
   assets:
     - assets/langs/en.json
     - assets/langs/vi.json
+    - assets/bgimage/complaintbg.jpg
