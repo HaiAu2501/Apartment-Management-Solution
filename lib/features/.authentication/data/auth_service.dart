@@ -38,7 +38,7 @@ class AuthenticationService {
   }
 
   // Đăng nhập người dùng
-  Future<String?> signIn(String email, String password) async {
+  Future<Map<String, dynamic>?> signIn(String email, String password) async {
     final url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$apiKey';
     final response = await http.post(
       Uri.parse(url),
@@ -53,8 +53,10 @@ class AuthenticationService {
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       String idToken = responseData['idToken'];
-      await setIdToken(idToken); // Lưu idToken vào Secure Storage
-      return idToken;
+      String uid = responseData['localId'];
+      String email = responseData['email'];
+      await setIdToken(idToken);
+      return {'idToken': idToken, 'uid': uid, 'email': email};
     } else {
       print('Lỗi khi đăng nhập: ${response.statusCode}');
       print('Chi tiết lỗi: ${response.body}');

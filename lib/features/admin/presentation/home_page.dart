@@ -15,12 +15,14 @@ class AdminHomePage extends StatefulWidget {
   final AuthenticationService authService;
   final String idToken;
   final String uid;
+  final String email;
 
   const AdminHomePage({
     super.key,
     required this.authService,
     required this.idToken,
     required this.uid,
+    required this.email,
   });
 
   @override
@@ -31,7 +33,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
   int _selectedIndex = 0;
   late final List<Widget> _pages;
 
-  // 1. Thêm biến trạng thái để lưu trữ email
   String _email = '';
 
   final List<SidebarItem> _sidebarItems = [
@@ -86,8 +87,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       // 6: Đăng xuất sẽ được xử lý riêng
     ];
 
-    // 2. Lấy email từ AuthenticationService
-    _fetchUserEmail();
+    _email = widget.email;
   }
 
   // Hàm để lấy email người dùng
