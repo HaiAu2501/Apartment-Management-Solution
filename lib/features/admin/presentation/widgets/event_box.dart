@@ -1,8 +1,8 @@
-// lib/widgets/event_box.dart
+// lib/features/admin/presentation/widgets/event_box.dart
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../domain/events.dart';
+import 'package:intl/intl.dart';
 
 class EventBox extends StatelessWidget {
   final String title;
@@ -12,7 +12,8 @@ class EventBox extends StatelessWidget {
   final Function(Event) onEventTap;
   final Function(Event) onEdit;
   final Function(Event) onDelete;
-  final String screenSize; // 'wide', 'medium', 'small'
+  final String screenSize;
+  final bool scrollable; // Thêm tham số scrollable
 
   const EventBox({
     Key? key,
@@ -24,107 +25,60 @@ class EventBox extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.screenSize,
+    this.scrollable = false, // Giá trị mặc định là false
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Determine button layout based on screen size
-    bool isMediumScreen = screenSize == 'medium';
-    bool isWideScreen = screenSize == 'wide';
-    bool isSmallScreen = screenSize == 'small';
+    Widget content;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white, // Màu nền trắng
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16.0),
-      width: double.infinity, // Ensure full width
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Tiêu đề và thống kê
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+    if (events.isEmpty) {
+      content = Center(child: Text(emptyMessage));
+    } else {
+      content = ListView.builder(
+        shrinkWrap: true,
+        physics: scrollable ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
+        itemCount: events.length,
+        itemBuilder: (context, index) {
+          final eventWithDate = events[index];
+          final event = eventWithDate.event;
+          return ListTile(
+            title: Text(event.title),
+            subtitle: Text(DateFormat('dd/MM/yyyy').format(event.date)),
+            onTap: () => onEventTap(event),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () => onEdit(event),
                 ),
-              ),
-              const SizedBox(height: 4.0),
-              Text(
-                count > 0 ? (title == 'Sự kiện sắp tới' ? 'Trong 30 ngày sắp tới: $count sự kiện' : 'Trong 30 ngày đã qua: $count sự kiện') : (title == 'Sự kiện sắp tới' ? 'Trong 30 ngày sắp tới: 0 sự kiện' : 'Trong 30 ngày đã qua: 0 sự kiện'),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
+                IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => onDelete(event),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8.0),
-          // Danh sách sự kiện
-          events.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text(emptyMessage),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: events.length,
-                  itemBuilder: (context, index) {
-                    final eventWithDate = events[index];
-                    return ListTile(
-                      leading: const Icon(Icons.event),
-                      title: isMediumScreen || isSmallScreen
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  eventWithDate.event.title,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                                const SizedBox(height: 4.0),
-                                Row(),
-                              ],
-                            )
-                          : Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    eventWithDate.event.title,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Thời gian: ${DateFormat('dd/MM/yyyy').format(eventWithDate.date)}'),
-                          Text('Địa điểm: ${eventWithDate.event.location}'),
-                        ],
-                      ),
-                      onTap: () {
-                        onEventTap(eventWithDate.event);
-                      },
-                    );
-                  },
-                ),
-        ],
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Text(
+              '$title ($count)',
+              style: TextStyle(fontSize: 22),
+            ),
+            Divider(),
+            Expanded(
+              child: scrollable ? SingleChildScrollView(child: content) : content,
+            ),
+          ],
+        ),
       ),
     );
   }

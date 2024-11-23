@@ -86,6 +86,33 @@ class AuthenticationService {
     }
   }
 
+  // Lấy email người dùng từ Firestore dựa trên uid
+  Future<String?> getEmail(String idToken, String uid) async {
+    final url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/-default-/data/~2Fadmin~$uid?key=$apiKey';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      if (responseData['fields'] != null && responseData['fields']['email'] != null && responseData['fields']['email']['stringValue'] != null) {
+        return responseData['fields']['email']['stringValue'];
+      } else {
+        print('Email không được tìm thấy cho người dùng này.');
+        return null;
+      }
+    } else {
+      print('Lỗi khi truy xuất tài liệu người dùng: ${response.statusCode}');
+      print('Chi tiết lỗi: ${response.body}');
+      return null;
+    }
+  }
+
   // Tạo tài liệu trong collection 'queue' với documentID tự tạo
   Future<bool> createQueueDocument(Map<String, dynamic> queueData) async {
     String collectionPath = 'queue';

@@ -20,9 +20,9 @@ class EventsPage extends StatefulWidget {
   _EventsPageState createState() => _EventsPageState();
 }
 
-class _EventsPageState extends State<EventsPage> {
+class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateMixin {
   late final EventsRepository eventsRepository;
-  late final AuthenticationService authService; // Added local variable
+  late final AuthenticationService authService;
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -33,6 +33,16 @@ class _EventsPageState extends State<EventsPage> {
 
   bool _isLoading = true; // Biến chỉ thị đang tải sự kiện
 
+  // Controller for TabBar
+  late TabController _tabController;
+
+  // Controllers for Add Event Tab
+  final TextEditingController _addTitleController = TextEditingController();
+  final TextEditingController _addContentController = TextEditingController();
+  final TextEditingController _addOrganizerController = TextEditingController();
+  final TextEditingController _addParticipantsController = TextEditingController();
+  final TextEditingController _addLocationController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +52,21 @@ class _EventsPageState extends State<EventsPage> {
       projectId: authService.projectId,
     );
     _fetchEvents(); // Lấy sự kiện khi trang khởi tạo
+
+    // Initialize TabController with 2 tabs
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose(); // Dispose TabController
+    // Dispose Add Event Controllers
+    _addTitleController.dispose();
+    _addContentController.dispose();
+    _addOrganizerController.dispose();
+    _addParticipantsController.dispose();
+    _addLocationController.dispose();
+    super.dispose();
   }
 
   /// Lấy tất cả các sự kiện từ Firestore và cập nhật Map _events
@@ -89,9 +114,9 @@ class _EventsPageState extends State<EventsPage> {
         setState(() {
           _isLoading = false;
         });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error fetching events: $e')),
-          );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching events: $e')),
+        );
       }
     }
   }
@@ -153,109 +178,60 @@ class _EventsPageState extends State<EventsPage> {
         _selectedDay = selectedDay;
         _focusedDay = focusedDay;
       });
+      _tabController.animateTo(0); // Switch to Event List tab when a new day is selected
     }
   }
 
   /// Thêm một sự kiện mới
-  void _addEvent() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        // Các controller cho các trường nhập liệu
-        TextEditingController titleController = TextEditingController();
-        TextEditingController contentController = TextEditingController();
-        TextEditingController organizerController = TextEditingController();
-        TextEditingController participantsController = TextEditingController();
-        TextEditingController locationController = TextEditingController();
-        DateTime selectedDate = _selectedDay ?? _focusedDay;
+  Future<void> _addEvent() async {
+    // Validate input fields
+    if (_addTitleController.text.isEmpty || _addContentController.text.isEmpty || _addOrganizerController.text.isEmpty || _addParticipantsController.text.isEmpty || _addLocationController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng điền đầy đủ các trường.')),
+      );
+      return;
+    }
 
-        return AlertDialog(
-          title: const Text('Thêm sự kiện mới'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Tên sự kiện'),
-                ),
-                TextField(
-                  controller: contentController,
-                  decoration: const InputDecoration(labelText: 'Nội dung'),
-                ),
-                TextField(
-                  controller: organizerController,
-                  decoration: const InputDecoration(labelText: 'Người tổ chức'),
-                ),
-                TextField(
-                  controller: participantsController,
-                  decoration: const InputDecoration(labelText: 'Thành phần tham dự'),
-                ),
-                TextField(
-                  controller: locationController,
-                  decoration: const InputDecoration(labelText: 'Địa điểm'),
-                ),
-                const SizedBox(height: 10),
-                // Hiển thị ngày được chọn
-                Row(
-                  children: [
-                    const Text('Ngày: '),
-                    Text(
-                      DateFormat('dd/MM/yyyy').format(selectedDate),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                // Tạo dữ liệu sự kiện
-                Map<String, dynamic> eventData = {
-                  'title': titleController.text,
-                  'content': contentController.text,
-                  'organizer': organizerController.text,
-                  'participants': participantsController.text,
-                  'location': locationController.text,
-                  'date': selectedDate,
-                };
+    DateTime selectedDate = _selectedDay ?? _focusedDay;
 
-                try {
-                  String? idToken = await authService.getIdToken();
-                  if (idToken == null) {
-                    throw Exception('User not authenticated');
-                  }
+    // Tạo dữ liệu sự kiện
+    Map<String, dynamic> eventData = {
+      'title': _addTitleController.text,
+      'content': _addContentController.text,
+      'organizer': _addOrganizerController.text,
+      'participants': _addParticipantsController.text,
+      'location': _addLocationController.text,
+      'date': selectedDate,
+    };
 
-                  // Thêm sự kiện vào Firestore
-                  await eventsRepository.addEvent(eventData, idToken);
+    try {
+      String? idToken = await authService.getIdToken();
+      if (idToken == null) {
+        throw Exception('User not authenticated');
+      }
 
-                  // Làm mới danh sách sự kiện
-                  await _fetchEvents();
+      // Thêm sự kiện vào Firestore
+      await eventsRepository.addEvent(eventData, idToken);
 
-                  if (mounted) {
-                    Navigator.pop(context);
-                  }
-                } catch (e) {
-                  print('Error adding event: $e');
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error adding event: $e')),
-                    );
-                    Navigator.pop(context);
-                  }
-                }
-              },
-              child: const Text('Lưu'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
-            ),
-          ],
-        );
-      },
-    );
+      // Làm mới danh sách sự kiện
+      await _fetchEvents();
+
+      // Clear the input fields
+      _addTitleController.clear();
+      _addContentController.clear();
+      _addOrganizerController.clear();
+      _addParticipantsController.clear();
+      _addLocationController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thêm sự kiện thành công!')),
+      );
+    } catch (e) {
+      print('Error adding event: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding event: $e')),
+      );
+    }
   }
 
   /// Chỉnh sửa một sự kiện hiện có
@@ -407,215 +383,118 @@ class _EventsPageState extends State<EventsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Lấy chiều rộng màn hình
+    // Lấy kích thước màn hình
     double screenWidth = MediaQuery.of(context).size.width;
-    bool isSmallScreen = screenWidth <= 600;
-    bool isMediumScreen = screenWidth > 600 && screenWidth <= 900;
-    bool isWideScreen = screenWidth > 900;
+    double screenHeight = MediaQuery.of(context).size.height;
 
     List<EventWithDate> upcomingEvents = _getUpcomingEvents();
     List<EventWithDate> pastEvents = _getPastEvents();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Quản Lý Sự Kiện')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                // Determine calendar format based on screen size
-                CalendarFormat currentCalendarFormat = isSmallScreen ? CalendarFormat.twoWeeks : CalendarFormat.month;
-
-                return SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: isWideScreen || isMediumScreen
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Left Section: Past and Upcoming Events
-                              Expanded(
-                                flex: 1,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch, // Ensure full width
-                                  children: [
-                                    // Sự kiện sắp tới
-                                    EventBox(
+          : Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  // Cột bên trái: Sự kiện sắp tới và Sự kiện đã qua
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // Sự kiện sắp tới
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.all(0.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              children: [
+                                // Nội dung sự kiện sắp tới
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                                    child: EventBox(
                                       title: 'Sự kiện sắp tới',
                                       count: upcomingEventCount,
                                       events: upcomingEvents,
-                                      emptyMessage: '',
+                                      emptyMessage: 'Không có sự kiện sắp tới.',
                                       onEventTap: (event) {
                                         // Thêm chức năng xem chi tiết sự kiện tại đây nếu cần
                                       },
                                       onEdit: _editEvent,
                                       onDelete: _deleteEvent,
-                                      screenSize: isWideScreen
-                                          ? 'wide'
-                                          : isMediumScreen
-                                              ? 'medium'
-                                              : 'small',
+                                      screenSize: 'small',
+                                      scrollable: true,
                                     ),
-                                    const SizedBox(height: 16.0),
-                                    // Sự kiện đã qua
-                                    EventBox(
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Sự kiện đã qua
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.all(0.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0),
+                                    child: EventBox(
                                       title: 'Sự kiện đã qua',
                                       count: pastEventCount,
                                       events: pastEvents,
-                                      emptyMessage: '',
+                                      emptyMessage: 'Không có sự kiện đã qua.',
                                       onEventTap: (event) {
                                         // Thêm chức năng xem chi tiết sự kiện tại đây nếu cần
                                       },
                                       onEdit: _editEvent,
                                       onDelete: _deleteEvent,
-                                      screenSize: isWideScreen
-                                          ? 'wide'
-                                          : isMediumScreen
-                                              ? 'medium'
-                                              : 'small',
+                                      screenSize: 'small',
+                                      scrollable: true,
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 16.0),
-                              // Right Section: Calendar and Daily Events
-                              Expanded(
-                                flex: 2,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch, // Ensure full width
-                                  children: [
-                                    // Calendar Box
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.green[50], // Màu nền xanh lá cây nhẹ
-                                        borderRadius: BorderRadius.circular(10),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.3),
-                                            spreadRadius: 2,
-                                            blurRadius: 5,
-                                            offset: const Offset(0, 3),
-                                          ),
-                                        ],
-                                      ),
-                                      padding: const EdgeInsets.all(16.0),
-                                      width: double.infinity, // Ensure full width
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          TableCalendar<Event>(
-                                            locale: 'vi_VN',
-                                            firstDay: DateTime.utc(2020, 1, 1),
-                                            lastDay: DateTime.utc(2030, 12, 31),
-                                            focusedDay: _focusedDay,
-                                            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                                            onDaySelected: _onDaySelected,
-                                            calendarFormat: currentCalendarFormat,
-                                            onFormatChanged: (format) {
-                                              setState(() {
-                                                _calendarFormat = format;
-                                              });
-                                            },
-                                            onPageChanged: (focusedDay) {
-                                              setState(() {
-                                                _focusedDay = focusedDay;
-                                              });
-                                            },
-                                            calendarStyle: const CalendarStyle(
-                                              todayDecoration: BoxDecoration(
-                                                color: Colors.blueAccent,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              selectedDecoration: BoxDecoration(
-                                                color: Colors.orangeAccent,
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                            eventLoader: _getEventsForDay,
-                                            availableCalendarFormats: const {
-                                              CalendarFormat.month: 'Tháng',
-                                              CalendarFormat.twoWeeks: 'Hai tuần',
-                                            },
-                                            headerStyle: const HeaderStyle(
-                                              formatButtonVisible: false,
-                                              titleCentered: true,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16.0),
-                                    // Daily Events Box
-                                    DailyEventBox(
-                                      selectedDay: _selectedDay ?? _focusedDay,
-                                      events: _getEventsForDay(_selectedDay ?? _focusedDay),
-                                      onEdit: _editEvent,
-                                      onDelete: _deleteEvent,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Left Section: Past and Upcoming Events
-                              // Sự kiện sắp tới
-                              EventBox(
-                                title: 'Sự kiện sắp tới',
-                                count: upcomingEventCount,
-                                events: upcomingEvents,
-                                emptyMessage: '',
-                                onEventTap: (event) {
-                                  // Thêm chức năng xem chi tiết sự kiện tại đây nếu cần
-                                },
-                                onEdit: _editEvent,
-                                onDelete: _deleteEvent,
-                                screenSize: 'small',
-                              ),
-                              const SizedBox(height: 16.0),
-                              // Sự kiện đã qua
-                              EventBox(
-                                title: 'Sự kiện đã qua',
-                                count: pastEventCount,
-                                events: pastEvents,
-                                emptyMessage: '',
-                                onEventTap: (event) {
-                                  // Thêm chức năng xem chi tiết sự kiện tại đây nếu cần
-                                },
-                                onEdit: _editEvent,
-                                onDelete: _deleteEvent,
-                                screenSize: 'small',
-                              ),
-                              const SizedBox(height: 16.0),
-                              // Right Section: Calendar and Daily Events
-                              // Calendar Box
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.green[50], // Màu nền xanh lá cây nhẹ
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      spreadRadius: 2,
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                padding: const EdgeInsets.all(16.0),
-                                width: double.infinity, // Ensure full width
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    TableCalendar<Event>(
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Cột bên phải: Lịch và Sự kiện trong ngày
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // Lịch
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.all(4.0),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[100],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              children: [
+                                // Nội dung lịch
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: TableCalendar<Event>(
                                       locale: 'vi_VN',
                                       firstDay: DateTime.utc(2020, 1, 1),
                                       lastDay: DateTime.utc(2030, 12, 31),
                                       focusedDay: _focusedDay,
                                       selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                                       onDaySelected: _onDaySelected,
-                                      calendarFormat: isSmallScreen ? CalendarFormat.twoWeeks : CalendarFormat.month,
+                                      calendarFormat: _calendarFormat,
                                       onFormatChanged: (format) {
                                         setState(() {
                                           _calendarFormat = format;
@@ -626,7 +505,7 @@ class _EventsPageState extends State<EventsPage> {
                                           _focusedDay = focusedDay;
                                         });
                                       },
-                                      calendarStyle: const CalendarStyle(
+                                      calendarStyle: CalendarStyle(
                                         todayDecoration: BoxDecoration(
                                           color: Colors.blueAccent,
                                           shape: BoxShape.circle,
@@ -635,42 +514,133 @@ class _EventsPageState extends State<EventsPage> {
                                           color: Colors.orangeAccent,
                                           shape: BoxShape.circle,
                                         ),
+                                        defaultTextStyle: const TextStyle(fontSize: 12),
+                                        todayTextStyle: const TextStyle(fontSize: 12, color: Colors.white),
+                                        selectedTextStyle: const TextStyle(fontSize: 12, color: Colors.white),
+                                      ),
+                                      headerStyle: HeaderStyle(
+                                        formatButtonVisible: false,
+                                        titleCentered: true,
+                                        leftChevronIcon: const Icon(Icons.chevron_left, size: 16),
+                                        rightChevronIcon: const Icon(Icons.chevron_right, size: 16),
+                                        titleTextStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                        leftChevronMargin: const EdgeInsets.only(left: 8.0),
+                                        rightChevronMargin: const EdgeInsets.only(right: 8.0),
                                       ),
                                       eventLoader: _getEventsForDay,
                                       availableCalendarFormats: const {
                                         CalendarFormat.month: 'Tháng',
                                         CalendarFormat.twoWeeks: 'Hai tuần',
                                       },
-                                      headerStyle: const HeaderStyle(
-                                        formatButtonVisible: false,
-                                        titleCentered: true,
-                                      ),
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 16.0),
-                              // Daily Events Box
-                              DailyEventBox(
-                                selectedDay: _selectedDay ?? _focusedDay,
-                                events: _getEventsForDay(_selectedDay ?? _focusedDay),
-                                onEdit: _editEvent,
-                                onDelete: _deleteEvent,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                        ),
+
+                        // Sự kiện trong ngày với TabBar
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.all(4.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                // TabBar
+                                TabBar(
+                                  controller: _tabController,
+                                  tabs: const [
+                                    Tab(text: 'Danh sách sự kiện trong ngày'),
+                                    Tab(text: 'Thêm mới sự kiện'),
+                                  ],
+                                  labelColor: Colors.blue,
+                                  unselectedLabelColor: Colors.grey,
+                                  indicatorColor: Colors.blueAccent,
+                                ),
+                                // TabBarView
+                                Expanded(
+                                  child: TabBarView(
+                                    controller: _tabController,
+                                    children: [
+                                      // Tab 1: Danh sách sự kiện (Event List)
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: DailyEventBox(
+                                          selectedDay: _selectedDay ?? _focusedDay,
+                                          events: _getEventsForDay(_selectedDay ?? _focusedDay),
+                                          onEdit: _editEvent,
+                                          onDelete: _deleteEvent,
+                                          scrollable: true,
+                                        ),
+                                      ),
+
+                                      // Tab 2: Thêm mới sự kiện (Add New Event)
+                                      SingleChildScrollView(
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(15.0, 6.0, 15.0, 6.0),
+                                          child: Column(
+                                            children: [
+                                              TextField(
+                                                controller: _addTitleController,
+                                                decoration: const InputDecoration(labelText: 'Tên sự kiện'),
+                                              ),
+                                              TextField(
+                                                controller: _addContentController,
+                                                decoration: const InputDecoration(labelText: 'Nội dung'),
+                                              ),
+                                              TextField(
+                                                controller: _addOrganizerController,
+                                                decoration: const InputDecoration(labelText: 'Người tổ chức'),
+                                              ),
+                                              TextField(
+                                                controller: _addParticipantsController,
+                                                decoration: const InputDecoration(labelText: 'Thành phần tham dự'),
+                                              ),
+                                              TextField(
+                                                controller: _addLocationController,
+                                                decoration: const InputDecoration(labelText: 'Địa điểm'),
+                                              ),
+                                              // Hiển thị ngày được chọn
+                                              Row(
+                                                children: [
+                                                  const Text('Ngày: '),
+                                                  Text(
+                                                    DateFormat('dd/MM/yyyy').format(_selectedDay ?? _focusedDay),
+                                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                                  ),
+                                                ],
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: _addEvent,
+                                                child: const Text('Lưu'),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
-      floatingActionButton: (isSmallScreen || isMediumScreen)
-          ? FloatingActionButton.small(
-              onPressed: _addEvent,
-              child: const Icon(Icons.add),
-            )
-          : FloatingActionButton(
-              onPressed: _addEvent,
-              child: const Icon(Icons.add),
+                ],
+              ),
             ),
     );
   }

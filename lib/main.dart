@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
       ),
       // Trang mở đầu của ứng dụng là trang đăng nhập
       home: LoginPage(authService: authService),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
