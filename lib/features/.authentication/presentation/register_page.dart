@@ -19,7 +19,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  String selectedRole = 'resident'; // Mặc định là 'Cư dân'
+  String selectedRole = 'resident'; // Mặc định là 'Cư Dân'
 
   bool isLoading = false;
   String? message;
@@ -94,7 +94,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 top: -50,
                 left: -50,
                 child: Container(
-                  width: 250, // đường kính của bubble
+                  width: 250, // Đường kính của bubble
                   height: 250,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -110,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 bottom: -100,
                 right: -50,
                 child: Container(
-                  width: 200, // đường kính của bubble
+                  width: 200, // Đường kính của bubble
                   height: 200,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -126,7 +126,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 top: 120,
                 right: 50,
                 child: Container(
-                  width: 150, // đường kính của bubble
+                  width: 150, // Đường kính của bubble
                   height: 150,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -142,7 +142,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 bottom: 100,
                 right: 500,
                 child: Container(
-                  width: 300, // đường kính của bubble
+                  width: 300, // Đường kính của bubble
                   height: 300,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -159,6 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
+                    height: isMobile ? double.infinity : 600,
                     width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -176,11 +177,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         ? buildRegisterForm()
                         : IntrinsicHeight(
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 // Bên trái: Form đăng ký
                                 Expanded(
                                   flex: 1,
-                                  child: buildRegisterForm(),
+                                  child: Center(
+                                    child: buildRegisterForm(),
+                                  ),
                                 ),
                                 const SizedBox(width: 32),
                                 // Bên phải: Chào mừng
@@ -273,7 +277,6 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 50),
           const Text(
             'ĐĂNG KÝ',
             style: TextStyle(
@@ -282,12 +285,13 @@ class _RegisterPageState extends State<RegisterPage> {
               color: Colors.green,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 15),
           TextFormField(
             controller: emailController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.email),
               labelText: 'Email',
+              helperText: ' ', // Dự trữ không gian cho thông báo lỗi
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -303,12 +307,13 @@ class _RegisterPageState extends State<RegisterPage> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 5),
           TextFormField(
             controller: passwordController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.lock),
               labelText: 'Mật khẩu',
+              helperText: ' ', // Dự trữ không gian cho thông báo lỗi
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -324,7 +329,7 @@ class _RegisterPageState extends State<RegisterPage> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 5),
           DropdownButtonFormField<String>(
             value: selectedRole,
             decoration: InputDecoration(
@@ -381,7 +386,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Nút Quay lại Đăng Nhập với viền gradient và nền trắng
           Container(
             width: double.infinity,
@@ -420,7 +425,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
-          const SizedBox(height: 50),
         ],
       ),
     );

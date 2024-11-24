@@ -25,9 +25,14 @@ class _LoginPageState extends State<LoginPage> {
 
   bool isLoading = false;
   String? message;
+  bool _submitted = false; // Add this line
 
   // Hàm xử lý đăng nhập
   Future<void> handleLogin() async {
+    setState(() {
+      _submitted = true; // Update the submitted flag
+    });
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -174,6 +179,13 @@ class _LoginPageState extends State<LoginPage> {
 
   // Hàm chuyển hướng đến trang đăng ký
   void navigateToRegister() {
+    setState(() {
+      message = null;
+      _submitted = false; // Reset the submitted flag
+      _formKey.currentState?.reset();
+      emailController.clear();
+      passwordController.clear();
+    });
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -200,76 +212,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              // Thêm nhiều bong bóng nền hơn
-              Positioned(
-                top: -50,
-                left: -50,
-                child: Container(
-                  width: 250, // đường kính của bubble
-                  height: 250,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color.fromRGBO(161, 214, 178, 0.25), Color.fromRGBO(241, 243, 194, 0.75)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -100,
-                right: -50,
-                child: Container(
-                  width: 200, // đường kính của bubble
-                  height: 200,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color.fromRGBO(161, 214, 178, 1), Color.fromRGBO(241, 243, 194, 1)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 120,
-                right: 50,
-                child: Container(
-                  width: 150, // đường kính của bubble
-                  height: 150,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 100,
-                right: 500,
-                child: Container(
-                  width: 300, // đường kính của bubble
-                  height: 300,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color.fromRGBO(161, 214, 178, 0.75), Color.fromRGBO(241, 243, 194, 0.25)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
-                ),
-              ),
+              // ... (Các widget Positioned khác không thay đổi)
               // Nội dung chính
               Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
+                    height: isMobile ? double.infinity : 600,
                     width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -287,11 +236,24 @@ class _LoginPageState extends State<LoginPage> {
                         ? buildLoginForm()
                         : IntrinsicHeight(
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 // Bên trái: Form đăng nhập
                                 Expanded(
                                   flex: 1,
-                                  child: buildLoginForm(),
+                                  child: Center(
+                                    // Thêm Center để căn giữa theo chiều dọc
+                                    child: buildLoginForm(),
+                                  ),
+                                  /*
+                                Hoặc sử dụng Column:
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    buildLoginForm(),
+                                  ],
+                                ),
+                                */
                                 ),
                                 const SizedBox(width: 32),
                                 // Bên phải: Chào mừng
@@ -384,7 +346,6 @@ class _LoginPageState extends State<LoginPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 50),
           const Text(
             'ĐĂNG NHẬP',
             style: TextStyle(
@@ -393,12 +354,14 @@ class _LoginPageState extends State<LoginPage> {
               color: Colors.green,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 15),
           TextFormField(
             controller: emailController,
+            autovalidateMode: _submitted ? AutovalidateMode.onUserInteraction : AutovalidateMode.disabled,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.email),
               labelText: 'Email',
+              helperText: ' ', // Dự trữ không gian cho thông báo lỗi
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -414,9 +377,10 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 5),
           TextFormField(
             controller: passwordController,
+            autovalidateMode: _submitted ? AutovalidateMode.onUserInteraction : AutovalidateMode.disabled,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.lock),
               labelText: 'Mật khẩu',
@@ -435,7 +399,6 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          const SizedBox(height: 5),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
@@ -479,7 +442,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Nút Đăng Ký với viền gradient và nền trắng
           Container(
             width: double.infinity,
@@ -516,7 +479,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          const SizedBox(height: 50),
         ],
       ),
     );

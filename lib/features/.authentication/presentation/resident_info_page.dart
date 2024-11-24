@@ -123,7 +123,12 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
   Future<void> logout() async {
     // Thực hiện logout nếu cần (ví dụ: xóa token, dữ liệu cục bộ)
     // Sau đó chuyển hướng về trang đăng nhập
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage(authService: widget.authService)));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginPage(authService: widget.authService),
+      ),
+    );
   }
 
   @override
@@ -214,7 +219,8 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
+                    height: isMobile ? double.infinity : 600,
+                    width: isMobile ? double.infinity : 800,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
@@ -231,6 +237,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                         ? buildRegisterForm()
                         : IntrinsicHeight(
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 // Bên trái: Form nhập thông tin cư dân
                                 Expanded(
@@ -252,7 +259,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Align(
-                                      alignment: Alignment.center, // Căn lề trái
+                                      alignment: Alignment.center,
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,7 +293,10 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(color: message!.contains('thành công') ? Colors.green : Colors.red, borderRadius: BorderRadius.circular(8)),
-                      child: Text(message!, style: const TextStyle(color: Colors.white)),
+                      child: Text(
+                        message!,
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ),
@@ -312,17 +322,19 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const SizedBox(height: 15),
           const Text(
             'THÔNG TIN CƯ DÂN',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green),
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 15),
           // Họ và Tên
           TextFormField(
             controller: fullNameController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.person),
               labelText: 'Họ và Tên',
+              helperText: ' ', // Dự trữ không gian cho thông báo lỗi
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
             validator: (value) {
@@ -332,31 +344,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
-          // Giới tính
-          DropdownButtonFormField<String>(
-            value: selectedGender,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.transgender),
-              labelText: 'Giới tính',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            items: <String>['Nam', 'Nữ', 'Khác'].map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
-            }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                selectedGender = newValue!;
-              });
-            },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng chọn giới tính.';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 5),
           // Ngày sinh (GestureDetector với TextFormField)
           GestureDetector(
             onTap: selectDOB,
@@ -366,6 +354,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.calendar_today),
                   labelText: 'Ngày tháng năm sinh (DD/MM/YYYY)',
+                  helperText: ' ', // Dự trữ không gian cho thông báo lỗi
                   suffixIcon: const Icon(Icons.calendar_today),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
@@ -378,29 +367,67 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          // Số điện thoại
-          TextFormField(
-            controller: phoneController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.phone),
-              labelText: 'Số điện thoại',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            keyboardType: TextInputType.phone,
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'Vui lòng nhập số điện thoại.';
-              if (!RegExp(r'^[0-9]{10,15}$').hasMatch(value)) return 'Số điện thoại không hợp lệ.';
-              return null;
-            },
+          const SizedBox(height: 5),
+          // Giới tính và Số điện thoại trên cùng một hàng
+          Row(
+            children: [
+              // Giới tính
+              Expanded(
+                flex: 45,
+                child: DropdownButtonFormField<String>(
+                  value: selectedGender,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.transgender),
+                    labelText: 'Giới tính',
+                    helperText: ' ', // Dự trữ không gian cho thông báo lỗi
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  items: <String>['Nam', 'Nữ', 'Khác'].map((String value) {
+                    return DropdownMenuItem<String>(value: value, child: Text(value));
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedGender = newValue!;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Vui lòng chọn giới tính.';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(width: 15), // Khoảng cách giữa hai ô
+              // Số điện thoại
+              Expanded(
+                flex: 55,
+                child: TextFormField(
+                  controller: phoneController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.phone),
+                    labelText: 'Số điện thoại',
+                    helperText: ' ', // Dự trữ không gian cho thông báo lỗi
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Vui lòng nhập số điện thoại.';
+                    if (!RegExp(r'^[0-9]{10,15}$').hasMatch(value)) return 'Số điện thoại không hợp lệ.';
+                    return null;
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 5),
           // Số ID
           TextFormField(
             controller: idController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.card_membership),
               labelText: 'Số CCCD/CMND/Hộ chiếu',
+              helperText: ' ', // Dự trữ không gian cho thông báo lỗi
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
             validator: (value) {
@@ -408,50 +435,58 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
-          // Tầng
-          TextFormField(
-            controller: floorController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.layers),
-              labelText: 'Tầng',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'Vui lòng nhập tầng.';
-              if (int.tryParse(value) == null) return 'Tầng phải là số.';
-              return null;
-            },
+          const SizedBox(height: 5),
+          // Tầng và Số căn hộ trên cùng một hàng
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: floorController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.layers),
+                    labelText: 'Tầng',
+                    helperText: ' ', // Dự trữ không gian cho thông báo lỗi
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Vui lòng nhập tầng.';
+                    if (int.tryParse(value) == null) return 'Tầng phải là số.';
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(width: 15), // Khoảng cách giữa hai ô
+              Expanded(
+                child: TextFormField(
+                  controller: apartmentNumberController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.home),
+                    labelText: 'Số căn hộ',
+                    helperText: ' ', // Dự trữ không gian cho thông báo lỗi
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Vui lòng nhập số căn hộ.';
+                    if (int.tryParse(value) == null) return 'Số căn hộ phải là số.';
+                    return null;
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          // Số căn hộ
-          TextFormField(
-            controller: apartmentNumberController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.home),
-              labelText: 'Số căn hộ',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'Vui lòng nhập số căn hộ.';
-              if (int.tryParse(value) == null) return 'Số căn hộ phải là số.';
-              return null;
-            },
-          ),
-          const SizedBox(height: 12),
           // Thông báo
           if (message != null)
             Text(
               message!,
               style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
             ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 5),
           // Nút Gửi Thông Tin với Gradient
           Container(
             width: double.infinity,
-            decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)]), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(8)),
             child: ElevatedButton(
               onPressed: submitInfo,
               style: ElevatedButton.styleFrom(
@@ -466,12 +501,12 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Nút Quay lại Đăng Nhập với viền gradient và nền trắng
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)]),
+              gradient: const LinearGradient(colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)], begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Padding(
