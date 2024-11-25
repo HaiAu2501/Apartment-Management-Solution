@@ -6,26 +6,26 @@ import 'package:intl/intl.dart';
 
 class EventBox extends StatelessWidget {
   final String title;
-  final int count;
+  final String countMessage; // Changed from int count to String countMessage
   final List<EventWithDate> events;
   final String emptyMessage;
   final Function(Event) onEventTap;
   final Function(Event) onEdit;
   final Function(Event) onDelete;
   final String screenSize;
-  final bool scrollable; // Thêm tham số scrollable
+  final bool scrollable;
 
   const EventBox({
     Key? key,
     required this.title,
-    required this.count,
+    required this.countMessage, // Updated parameter
     required this.events,
     required this.emptyMessage,
     required this.onEventTap,
     required this.onEdit,
     required this.onDelete,
     required this.screenSize,
-    this.scrollable = false, // Giá trị mặc định là false
+    this.scrollable = false,
   }) : super(key: key);
 
   @override
@@ -37,48 +37,75 @@ class EventBox extends StatelessWidget {
     } else {
       content = ListView.builder(
         shrinkWrap: true,
-        physics: scrollable ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
+        physics: scrollable ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(),
         itemCount: events.length,
         itemBuilder: (context, index) {
           final eventWithDate = events[index];
           final event = eventWithDate.event;
-          return ListTile(
-            title: Text(event.title),
-            subtitle: Text(DateFormat('dd/MM/yyyy').format(event.date)),
-            onTap: () => onEventTap(event),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => onEdit(event),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => onDelete(event),
-                ),
-              ],
+          return Card(
+            color: const Color.fromARGB(255, 255, 253, 232),
+            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4), // Adds spacing between cards
+            child: ListTile(
+              leading: const Icon(Icons.event, color: Colors.black),
+              title: Text(event.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  Text('Thời gian: ${DateFormat('dd/MM/yyyy').format(event.date)}'),
+                  const SizedBox(height: 2),
+                  Text('Địa điểm: ${event.location}'),
+                ],
+              ),
+              onTap: () => onEventTap(event),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () {
+                      onEdit(event);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      onDelete(event);
+                    },
+                  ),
+                ],
+              ),
             ),
           );
         },
       );
     }
 
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            Text(
-              '$title ($count)',
-              style: TextStyle(fontSize: 22),
-            ),
-            Divider(),
-            Expanded(
-              child: scrollable ? SingleChildScrollView(child: content) : content,
-            ),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, // Align to left
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.left,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            countMessage,
+            style: const TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+          const Divider(),
+          Expanded(
+            child: scrollable ? SingleChildScrollView(child: content) : content,
+          ),
+        ],
       ),
     );
   }
