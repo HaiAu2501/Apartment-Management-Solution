@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
     final authService = AuthenticationService(apiKey: apiKey, projectId: projectId);
 
     return MaterialApp(
+      locale: const Locale('vi', 'VN'),
       title: 'Quản Lý Chung Cư',
       theme: ThemeData(
         primaryColor: Colors.white,
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
       ),
       // Trang mở đầu của ứng dụng là trang đăng nhập
       home: LoginPage(authService: authService),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

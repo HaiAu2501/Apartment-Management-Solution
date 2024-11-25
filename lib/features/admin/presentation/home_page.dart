@@ -15,12 +15,14 @@ class AdminHomePage extends StatefulWidget {
   final AuthenticationService authService;
   final String idToken;
   final String uid;
+  final String email;
 
   const AdminHomePage({
     super.key,
     required this.authService,
     required this.idToken,
     required this.uid,
+    required this.email,
   });
 
   @override
@@ -30,6 +32,8 @@ class AdminHomePage extends StatefulWidget {
 class _AdminHomePageState extends State<AdminHomePage> {
   int _selectedIndex = 0;
   late final List<Widget> _pages;
+
+  String _email = '';
 
   final List<SidebarItem> _sidebarItems = [
     SidebarItem(
@@ -74,16 +78,39 @@ class _AdminHomePageState extends State<AdminHomePage> {
         uid: widget.uid,
       ), // 2: Người dùng
       const FeesPage(), // 3: Phí và Tài chính
-       ComplaintsPage(authService: widget.authService,), // 4: Tiện ích và Khiếu nại
+      ComplaintsPage(
+        authService: widget.authService,
+      ), // 4: Tiện ích và Khiếu nại
       EventsPage(
         authService: widget.authService,
       ), // 5: Sự kiện
       // 6: Đăng xuất sẽ được xử lý riêng
     ];
+
+    _email = widget.email;
+  }
+
+  // Hàm để lấy email người dùng
+  Future<void> _fetchUserEmail() async {
+    try {
+      String? email = await widget.authService.getEmail(widget.idToken, widget.uid);
+      setState(() {
+        _email = email ?? 'Người dùng';
+      });
+    } catch (e) {
+      // Xử lý lỗi nếu có
+      setState(() {
+        _email = 'Người dùng';
+      });
+      print('Error fetching email: $e');
+    }
   }
 
   /// Logout function
   Future<void> logout() async {
+    // Xóa idToken khỏi Secure Storage nếu cần
+    await widget.authService.clearIdToken();
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -241,13 +268,28 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     appBar: AppBar(
                       title: const Text('Trang chủ Quản trị viên'),
                       backgroundColor: Colors.white,
+                      // 3. Cập nhật AppBar để thêm dòng "Xin chào, {email}" ở phía phải
                       actions: [
-                        IconButton(
-                          icon: const Icon(Icons.logout),
-                          onPressed: logout,
-                          tooltip: 'Đăng xuất',
-                        )
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Center(
+                            child: Text(
+                              'Xin chào, $_email',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
+                      iconTheme: const IconThemeData(color: Colors.black),
+                      // Optional: Nếu bạn muốn thay đổi màu chữ của title
+                      titleTextStyle: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     body: _pages[_selectedIndex],
                   ),
@@ -262,18 +304,32 @@ class _AdminHomePageState extends State<AdminHomePage> {
               backgroundColor: Colors.white,
               leading: Builder(
                 builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu),
+                  icon: const Icon(Icons.menu, color: Colors.black),
                   onPressed: () => Scaffold.of(context).openDrawer(),
                   tooltip: 'Menu',
                 ),
               ),
               actions: [
+                // Hiển thị dòng "Xin chào, {email}" trên AppBar mobile (tuỳ chọn)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Center(
+                    child: Text(
+                      'Xin chào, $_email',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
                 IconButton(
-                  icon: const Icon(Icons.logout),
+                  icon: const Icon(Icons.logout, color: Colors.black),
                   onPressed: logout,
                   tooltip: 'Đăng xuất',
                 )
               ],
+              iconTheme: const IconThemeData(color: Colors.black),
             ),
             drawer: _buildDrawer(),
             body: _pages[_selectedIndex],

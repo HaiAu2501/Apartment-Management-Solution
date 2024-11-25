@@ -199,9 +199,6 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản lý khiếu nại'),
-      ),
       backgroundColor: const Color.fromARGB(255, 238, 240, 242),
       body: _isLoading
           ? const Center(

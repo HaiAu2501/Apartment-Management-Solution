@@ -6,9 +6,7 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bảng điều khiển'),
-      ),
+      appBar: AppBar(),
       body: const Center(
         child: Text('Chào mừng bạn đến với ứng dụng Quản Lý Chung Cư!'),
       ),

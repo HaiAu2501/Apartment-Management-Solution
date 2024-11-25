@@ -38,7 +38,7 @@ class AuthenticationService {
   }
 
   // Đăng nhập người dùng
-  Future<String?> signIn(String email, String password) async {
+  Future<Map<String, dynamic>?> signIn(String email, String password) async {
     final url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$apiKey';
     final response = await http.post(
       Uri.parse(url),
@@ -53,8 +53,10 @@ class AuthenticationService {
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       String idToken = responseData['idToken'];
-      await setIdToken(idToken); // Lưu idToken vào Secure Storage
-      return idToken;
+      String uid = responseData['localId'];
+      String email = responseData['email'];
+      await setIdToken(idToken);
+      return {'idToken': idToken, 'uid': uid, 'email': email};
     } else {
       print('Lỗi khi đăng nhập: ${response.statusCode}');
       print('Chi tiết lỗi: ${response.body}');
@@ -81,6 +83,33 @@ class AuthenticationService {
       }
     } else {
       print('Lỗi khi lấy thông tin người dùng: ${response.statusCode}');
+      print('Chi tiết lỗi: ${response.body}');
+      return null;
+    }
+  }
+
+  // Lấy email người dùng từ Firestore dựa trên uid
+  Future<String?> getEmail(String idToken, String uid) async {
+    final url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/-default-/data/~2Fadmin~$uid?key=$apiKey';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      if (responseData['fields'] != null && responseData['fields']['email'] != null && responseData['fields']['email']['stringValue'] != null) {
+        return responseData['fields']['email']['stringValue'];
+      } else {
+        print('Email không được tìm thấy cho người dùng này.');
+        return null;
+      }
+    } else {
+      print('Lỗi khi truy xuất tài liệu người dùng: ${response.statusCode}');
       print('Chi tiết lỗi: ${response.body}');
       return null;
     }
