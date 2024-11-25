@@ -9,6 +9,7 @@ import 'events_page.dart';
 import 'fees_page.dart';
 import 'users_page.dart';
 import 'complaints_page.dart';
+import 'fees_page.dart';
 import 'widgets/weather.dart'; // Updated import
 
 class AdminHomePage extends StatefulWidget {
@@ -77,7 +78,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
         idToken: widget.idToken,
         uid: widget.uid,
       ), // 2: Người dùng
-      const FeesPage(), // 3: Phí và Tài chính
+      FeesPage(
+        authService: widget.authService,
+        idToken: widget.idToken,
+      ), // 3: Phí và Tài chính
       ComplaintsPage(
         authService: widget.authService,
       ), // 4: Tiện ích và Khiếu nại
