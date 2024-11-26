@@ -9,7 +9,7 @@ class DailyEventBox extends StatelessWidget {
   final List<Event> events;
   final Function(Event) onEdit;
   final Function(Event) onDelete;
-  final bool scrollable; // Thêm tham số scrollable
+  final bool scrollable; // Added scrollable parameter
 
   const DailyEventBox({
     Key? key,
@@ -17,7 +17,7 @@ class DailyEventBox extends StatelessWidget {
     required this.events,
     required this.onEdit,
     required this.onDelete,
-    this.scrollable = false, // Giá trị mặc định là false
+    this.scrollable = false, // Default value is false
   }) : super(key: key);
 
   @override
@@ -26,57 +26,90 @@ class DailyEventBox extends StatelessWidget {
 
     if (events.isEmpty) {
       content = Center(
-        child: Text('Không có sự kiện nào trong ngày này.'),
+        child: Text(
+          'Không có sự kiện nào trong ngày này.',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
       );
     } else {
       content = ListView.builder(
         shrinkWrap: true,
-        physics: scrollable ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
+        physics: scrollable ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(),
         itemCount: events.length,
         itemBuilder: (context, index) {
           final event = events[index];
-          return ExpansionTile(
-            leading: Icon(Icons.event),
-            title: Row(
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4), // Adds spacing between cards
+            child: ExpansionTile(
+              leading: const Icon(Icons.event, color: Colors.black),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      event.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => onEdit(event),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => onDelete(event),
+                  ),
+                ],
+              ),
               children: [
-                Expanded(child: Text(event.title)),
-                IconButton(
-                  icon: Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => onEdit(event),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => onDelete(event),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start, // Align to left
+                    children: [
+                      Text(
+                        'Nội dung: ${event.content}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Người tổ chức: ${event.organizer}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Thành phần tham dự: ${event.participants}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Địa điểm: ${event.location}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Thời gian: ${DateFormat('dd/MM/yyyy HH:mm').format(event.date)}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            children: [
-              Padding(
-                padding: EdgeInsets.only(left: 0.0, right: 16.0, top: 8.0, bottom: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // Căn lề trái
-                  children: [
-                    Text('Nội dung: ${event.content}'),
-                    SizedBox(height: 4),
-                    Text('Người tổ chức: ${event.organizer}'),
-                    SizedBox(height: 4),
-                    Text('Thành phần tham dự: ${event.participants}'),
-                    SizedBox(height: 4),
-                    Text('Địa điểm: ${event.location}'),
-                    SizedBox(height: 4),
-                    Text('Thời gian: ${DateFormat('dd/MM/yyyy').format(event.date)}'),
-                  ],
-                ),
-              ),
-            ],
           );
         },
       );
     }
 
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white, // Changed to white for better contrast
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: const EdgeInsets.all(12),
       child: scrollable ? SingleChildScrollView(child: content) : content,
-      color: Colors.white,
     );
   }
 }

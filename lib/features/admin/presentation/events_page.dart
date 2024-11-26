@@ -399,12 +399,13 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
                 children: [
                   // Cột bên trái: Sự kiện sắp tới và Sự kiện đã qua
                   Expanded(
+                    flex: 35,
                     child: Column(
                       children: [
                         // Sự kiện sắp tới
                         Expanded(
                           child: Container(
-                            margin: const EdgeInsets.all(0.0),
+                            margin: const EdgeInsets.only(right: 10),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -416,7 +417,7 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
                                     padding: const EdgeInsets.symmetric(horizontal: 0),
                                     child: EventBox(
                                       title: 'Sự kiện sắp tới',
-                                      count: upcomingEventCount,
+                                      countMessage: 'Trong 30 ngày sắp tới: $upcomingEventCount sự kiện',
                                       events: upcomingEvents,
                                       emptyMessage: 'Không có sự kiện sắp tới.',
                                       onEventTap: (event) {
@@ -433,11 +434,12 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
                             ),
                           ),
                         ),
+                        const SizedBox(height: 10),
 
                         // Sự kiện đã qua
                         Expanded(
                           child: Container(
-                            margin: const EdgeInsets.all(0.0),
+                            margin: const EdgeInsets.only(right: 10),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -448,7 +450,7 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
                                     padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0),
                                     child: EventBox(
                                       title: 'Sự kiện đã qua',
-                                      count: pastEventCount,
+                                      countMessage: 'Trong 30 ngày đã qua: $pastEventCount sự kiện',
                                       events: pastEvents,
                                       emptyMessage: 'Không có sự kiện đã qua.',
                                       onEventTap: (event) {
@@ -471,14 +473,15 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
 
                   // Cột bên phải: Lịch và Sự kiện trong ngày
                   Expanded(
+                    flex: 65,
                     child: Column(
                       children: [
                         // Lịch
                         Expanded(
                           child: Container(
-                            margin: const EdgeInsets.all(4.0),
+                            margin: const EdgeInsets.only(left: 10, bottom: 8, top: 2),
                             decoration: BoxDecoration(
-                              color: Colors.blue[100],
+                              color: Colors.green[50],
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Column(
@@ -486,9 +489,9 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
                                 // Nội dung lịch
                                 Expanded(
                                   child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.all(0.0),
                                     child: TableCalendar<Event>(
-                                      locale: 'vi_VN',
+                                      locale: 'vi_VN', // Ensure locale is correctly set to 'vi_VN'
                                       firstDay: DateTime.utc(2020, 1, 1),
                                       lastDay: DateTime.utc(2030, 12, 31),
                                       focusedDay: _focusedDay,
@@ -526,6 +529,7 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
                                         titleTextStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                                         leftChevronMargin: const EdgeInsets.only(left: 8.0),
                                         rightChevronMargin: const EdgeInsets.only(right: 8.0),
+                                        titleTextFormatter: (date, locale) => DateFormat.yMMMM(locale).format(date).toUpperCase(), // Format title with uppercase 'THÁNG'
                                       ),
                                       eventLoader: _getEventsForDay,
                                       availableCalendarFormats: const {
@@ -534,102 +538,145 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
                                       },
                                     ),
                                   ),
-                                ),
+                                )
                               ],
                             ),
                           ),
                         ),
 
-                        // Sự kiện trong ngày với TabBar
+                        // Sự kiện trong ngày
                         Expanded(
                           child: Container(
-                            margin: const EdgeInsets.all(4.0),
+                            margin: const EdgeInsets.only(left: 10, top: 10, bottom: 4),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
                               color: Colors.white,
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.grey.withOpacity(0.5),
-                                  blurRadius: 10,
+                                  blurRadius: 1,
                                   offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
-                            child: Column(
+                            child: Row(
                               children: [
-                                // TabBar
-                                TabBar(
-                                  controller: _tabController,
-                                  tabs: const [
-                                    Tab(text: 'Danh sách sự kiện trong ngày'),
-                                    Tab(text: 'Thêm mới sự kiện'),
-                                  ],
-                                  labelColor: Colors.blue,
-                                  unselectedLabelColor: Colors.grey,
-                                  indicatorColor: Colors.blueAccent,
-                                ),
-                                // TabBarView
+                                // Left Side: Event List with Title
                                 Expanded(
-                                  child: TabBarView(
-                                    controller: _tabController,
-                                    children: [
-                                      // Tab 1: Danh sách sự kiện (Event List)
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: DailyEventBox(
-                                          selectedDay: _selectedDay ?? _focusedDay,
-                                          events: _getEventsForDay(_selectedDay ?? _focusedDay),
-                                          onEdit: _editEvent,
-                                          onDelete: _deleteEvent,
-                                          scrollable: true,
-                                        ),
-                                      ),
-
-                                      // Tab 2: Thêm mới sự kiện (Add New Event)
-                                      SingleChildScrollView(
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(15.0, 6.0, 15.0, 6.0),
-                                          child: Column(
-                                            children: [
-                                              TextField(
-                                                controller: _addTitleController,
-                                                decoration: const InputDecoration(labelText: 'Tên sự kiện'),
-                                              ),
-                                              TextField(
-                                                controller: _addContentController,
-                                                decoration: const InputDecoration(labelText: 'Nội dung'),
-                                              ),
-                                              TextField(
-                                                controller: _addOrganizerController,
-                                                decoration: const InputDecoration(labelText: 'Người tổ chức'),
-                                              ),
-                                              TextField(
-                                                controller: _addParticipantsController,
-                                                decoration: const InputDecoration(labelText: 'Thành phần tham dự'),
-                                              ),
-                                              TextField(
-                                                controller: _addLocationController,
-                                                decoration: const InputDecoration(labelText: 'Địa điểm'),
-                                              ),
-                                              // Hiển thị ngày được chọn
-                                              Row(
-                                                children: [
-                                                  const Text('Ngày: '),
-                                                  Text(
-                                                    DateFormat('dd/MM/yyyy').format(_selectedDay ?? _focusedDay),
-                                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  flex: 50,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        return SizedBox(
+                                          height: constraints.maxHeight,
+                                          child: SingleChildScrollView(
+                                            child: Column(
+                                              children: [
+                                                // Title Text
+                                                const Text(
+                                                  'Danh sách sự kiện trong ngày',
+                                                  style: TextStyle(
+                                                    fontSize: 18, // Increased font size for prominence
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.black87, // Optional: Set a specific color
                                                   ),
-                                                ],
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: _addEvent,
-                                                child: const Text('Lưu'),
-                                              ),
-                                            ],
+                                                ),
+                                                const SizedBox(height: 10), // Space between title and event list
+
+                                                // Existing DailyEventBox
+                                                DailyEventBox(
+                                                  selectedDay: _selectedDay ?? _focusedDay,
+                                                  events: _getEventsForDay(_selectedDay ?? _focusedDay),
+                                                  onEdit: _editEvent,
+                                                  onDelete: _deleteEvent,
+                                                  scrollable: true,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+
+                                // Vertical Divider
+                                Container(
+                                  width: 1,
+                                  color: Colors.grey.shade300,
+                                ),
+
+                                // Right Side: Add Event Form
+                                Expanded(
+                                  flex: 50,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(0, 10, 15.0, 0),
+                                    child: LayoutBuilder(builder: (context, constraints) {
+                                      return SizedBox(
+                                        height: constraints.maxHeight,
+                                        child: SingleChildScrollView(
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(15.0, 0, 15.0, 0),
+                                            child: Column(
+                                              children: [
+                                                const Text(
+                                                  'Thêm mới sự kiện',
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 11),
+                                                TextField(
+                                                  controller: _addTitleController,
+                                                  decoration: const InputDecoration(
+                                                    labelText: 'Tên sự kiện',
+                                                  ),
+                                                ),
+                                                TextField(
+                                                  controller: _addContentController,
+                                                  decoration: const InputDecoration(
+                                                    labelText: 'Nội dung',
+                                                  ),
+                                                ),
+                                                TextField(
+                                                  controller: _addOrganizerController,
+                                                  decoration: const InputDecoration(
+                                                    labelText: 'Người tổ chức',
+                                                  ),
+                                                ),
+                                                TextField(
+                                                  controller: _addParticipantsController,
+                                                  decoration: const InputDecoration(
+                                                    labelText: 'Thành phần tham dự',
+                                                  ),
+                                                ),
+                                                TextField(
+                                                  controller: _addLocationController,
+                                                  decoration: const InputDecoration(
+                                                    labelText: 'Địa điểm',
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Center(
+                                                  child: ElevatedButton(
+                                                    onPressed: _addEvent,
+                                                    style: ElevatedButton.styleFrom(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                                                    ),
+                                                    child: const Text(
+                                                      'Lưu',
+                                                      style: TextStyle(fontSize: 16),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      );
+                                    }),
                                   ),
                                 ),
                               ],
@@ -699,7 +746,7 @@ class _EventsPageState extends State<EventsPage> with SingleTickerProviderStateM
                   const SizedBox(height: 4),
                   Text('Địa điểm: ${event.location}'),
                   const SizedBox(height: 4),
-                  Text('Thời gian: ${DateFormat('dd/MM/yyyy').format(event.date)}'),
+                  Text('Thời gian: ${DateFormat('dd/MM/yyyy HH:mm').format(event.date)}'),
                 ],
               ),
             ),
