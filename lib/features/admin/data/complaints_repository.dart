@@ -136,14 +136,13 @@ class ComplaintsRepository {
   //   }
   // }
   Future<void> updateComplaint(String documentId, Map<String, dynamic> updatedData, String idToken) async {
-  // Tạo updateMask theo định dạng chính xác
+ 
   String updateMask = updatedData.keys.map((field) => 'updateMask.fieldPaths=$field').join('&');
 
-  // URL với các trường updateMask.fieldPaths chính xác
   final url = 'https://firestore.googleapis.com/v1/$documentId?key=$apiKey&$updateMask';
 
   try {
-    print('Sending PATCH request to $url with data: $updatedData');
+    print('Sending PATCH request to $url with data: ');
     final response = await http.patch(
       Uri.parse(url),
       headers: {
