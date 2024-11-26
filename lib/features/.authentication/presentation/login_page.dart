@@ -70,9 +70,27 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
         } else if (role == 'resident') {
-          // Xử lý tương tự cho resident
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResidentHomePage(
+                authService: widget.authService,
+                idToken: idToken,
+                uid: uid,
+              ),
+            ),
+          );
         } else if (role == 'guest') {
-          // Xử lý tương tự cho guest
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GuestHomePage(
+                authService: widget.authService,
+                idToken: idToken,
+                uid: uid,
+              ),
+            ),
+          );
         } else {
           setState(() {
             message = 'Vai trò người dùng không hợp lệ.';
@@ -97,8 +115,8 @@ class _LoginPageState extends State<LoginPage> {
   // Hàm lấy vai trò của người dùng từ các collection
   Future<String?> getUserRole(String uid, String idToken) async {
     // Kiểm tra trong collection 'admin'
-    String adminUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/admin/$uid?key=${widget.authService.apiKey}';
     try {
+      String adminUrl = 'https://firestore.googleapis.com/v1/projects/${widget.authService.projectId}/databases/(default)/documents/admin/$uid?key=${widget.authService.apiKey}';
       final adminResponse = await http.get(
         Uri.parse(adminUrl),
         headers: {
