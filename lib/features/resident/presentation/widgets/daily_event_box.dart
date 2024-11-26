@@ -83,7 +83,7 @@ class DailyEventBox extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Thời gian: ${DateFormat('dd/MM/yyyy HH:mm').format(event.date)}',
+                        'Thời gian: ${DateFormat('dd/MM/yyyy').format(event.date)}',
                         style: const TextStyle(fontSize: 14),
                       ),
                     ],
