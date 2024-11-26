@@ -7,6 +7,7 @@ import '../../.authentication/presentation/login_page.dart';
 import 'profile_page.dart'; // Tạo file này tương tự như guest
 import 'fees_page.dart'; // Tạo file này tương tự như guest
 import 'events_page.dart'; // Tạo file này tương tự như guest
+import 'complaints_page.dart';
 
 class ResidentHomePage extends StatefulWidget {
   final AuthenticationService authService;
@@ -42,6 +43,10 @@ class _ResidentHomePageState extends State<ResidentHomePage> {
       icon: Icons.event_outlined,
     ),
     SidebarItem(
+      text: 'Khiếu nại',
+      icon: Icons.mail_outlined,
+    ),
+    SidebarItem(
       text: 'Đăng xuất',
       icon: Icons.logout_outlined,
     ),
@@ -53,8 +58,11 @@ class _ResidentHomePageState extends State<ResidentHomePage> {
     _pages = [
       const ProfilePage(), // 0: Hồ sơ nhân khẩu
       const FeesPage(), // 1: Phí thanh toán
-      const EventsPage(), // 2: Sự kiện
-      // 3: Đăng xuất sẽ được xử lý riêng
+      EventsPage(
+        authService: widget.authService,
+      ), // 2: Sự kiện
+      const ComplaintsPage(), //3: Khiếu nại
+      // 4: Đăng xuất sẽ được xử lý riêng
     ];
   }
 
@@ -70,7 +78,7 @@ class _ResidentHomePageState extends State<ResidentHomePage> {
 
   /// Xử lý khi chọn mục trong sidebar
   void _onSelectItem(int index) {
-    if (index == 3) {
+    if (index == 4) {
       // Đăng xuất
       logout();
     } else {
@@ -217,13 +225,6 @@ class _ResidentHomePageState extends State<ResidentHomePage> {
                     appBar: AppBar(
                       title: const Text('Trang Chủ Cư Dân'),
                       backgroundColor: Colors.white,
-                      actions: [
-                        IconButton(
-                          icon: const Icon(Icons.logout),
-                          onPressed: logout,
-                          tooltip: 'Đăng xuất',
-                        )
-                      ],
                     ),
                     body: _pages[_selectedIndex],
                   ),
