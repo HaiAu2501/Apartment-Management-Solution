@@ -18,14 +18,22 @@ class ResidentsTab extends StatefulWidget {
 }
 
 class _ResidentsTabState extends State<ResidentsTab> {
-  List<dynamic> residentsList = [];
-  List<dynamic> filteredResidents = [];
+  List<Map<String, dynamic>> residentsList = [];
+  List<Map<String, dynamic>> filteredResidents = [];
   bool isLoadingResidents = false;
 
-  // Biến trạng thái cho sắp xếp và lọc
+  // State variables for sorting and filtering
   String? sortCriteria;
   String? filterCriteria;
   String filterValue = '';
+
+  // Variables for room selection
+  int selectedFloor = 1; // Default floor
+  final int totalFloors = 10;
+  final int roomsPerFloor = 20;
+
+  // Selected room info
+  Map<String, dynamic>? selectedRoomInfo;
 
   @override
   void initState() {
@@ -35,11 +43,10 @@ class _ResidentsTabState extends State<ResidentsTab> {
 
   @override
   void dispose() {
-    // Nếu bạn có các Stream hoặc các đối tượng khác cần hủy bỏ, hãy thực hiện ở đây.
     super.dispose();
   }
 
-  // Hàm lấy danh sách cư dân
+  // Fetch residents from the repository
   Future<void> fetchResidents() async {
     setState(() {
       isLoadingResidents = true;
@@ -47,49 +54,58 @@ class _ResidentsTabState extends State<ResidentsTab> {
 
     try {
       List<dynamic> fetchedResidents = await widget.adminRepository.fetchResidents(widget.idToken);
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
+      print('Fetched Residents: $fetchedResidents'); // Debug
+
+      // Ensure fetchedResidents is a list of maps with 'name' and 'fields'
+      List<Map<String, dynamic>> parsedResidents = fetchedResidents.whereType<Map<String, dynamic>>().toList();
+      print('Parsed Residents: $parsedResidents'); // Debug
+
+      if (!mounted) return;
+
       setState(() {
-        residentsList = fetchedResidents;
+        residentsList = parsedResidents;
         filteredResidents = residentsList;
         isLoadingResidents = false;
       });
     } catch (e) {
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
+      if (!mounted) return;
       setState(() {
-        // Xử lý lỗi nếu cần
         isLoadingResidents = false;
       });
-      print('Lỗi khi tải residents: $e');
+      print('Error fetching residents: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tải danh sách cư dân: $e')),
+      );
     }
   }
 
-  // Hàm định dạng ngày sinh
+  // Format date of birth
   String formatDob(String dobString) {
     try {
-      // Giả sử dobString có định dạng DD/MM/YYYY
       DateFormat inputFormat = DateFormat('dd/MM/yyyy');
-      DateFormat outputFormat = DateFormat('dd/MM/yyyy');
       DateTime date = inputFormat.parse(dobString);
-      return outputFormat.format(date);
+      return DateFormat('dd/MM/yyyy').format(date);
     } catch (e) {
-      return dobString; // Nếu không thể định dạng, trả về nguyên bản
+      print('Error formatting DOB: $e');
+      return dobString;
     }
   }
 
-  // Hàm xử lý sắp xếp
+  // Sort residents based on criteria
   void sortResidents(String criteria) {
     setState(() {
       sortCriteria = criteria;
       filteredResidents.sort((a, b) {
-        final aFields = a['fields'];
-        final bFields = b['fields'];
+        final aFields = a['fields'] ?? {};
+        final bFields = b['fields'] ?? {};
+
         switch (criteria) {
           case 'floor':
-            return aFields['floor']['integerValue'].compareTo(bFields['floor']['integerValue']);
+            return _getIntegerValue(aFields, 'floor').compareTo(_getIntegerValue(bFields, 'floor'));
           case 'apartmentNumber':
-            return aFields['apartmentNumber']['integerValue'].compareTo(bFields['apartmentNumber']['integerValue']);
+            return _getIntegerValue(aFields, 'apartmentNumber').compareTo(_getIntegerValue(bFields, 'apartmentNumber'));
           case 'fullName':
-            return aFields['fullName']['stringValue'].compareTo(bFields['fullName']['stringValue']);
+            return _getStringValue(aFields, 'fullName').compareTo(_getStringValue(bFields, 'fullName'));
           default:
             return 0;
         }
@@ -97,126 +113,157 @@ class _ResidentsTabState extends State<ResidentsTab> {
     });
   }
 
-  // Hàm xử lý lọc
+  // Helper to safely get integer values
+  int _getIntegerValue(Map<String, dynamic> fields, String key) {
+    try {
+      if (fields.containsKey(key) && fields[key].containsKey('integerValue')) {
+        return int.parse(fields[key]['integerValue'].toString());
+      } else {
+        print('Missing integerValue for key: $key');
+        return 0;
+      }
+    } catch (e) {
+      print('Error parsing integerValue for key: $key, error: $e');
+      return 0;
+    }
+  }
+
+  // Helper to safely get string values
+  String _getStringValue(Map<String, dynamic> fields, String key) {
+    try {
+      if (fields.containsKey(key) && fields[key].containsKey('stringValue')) {
+        return fields[key]['stringValue'];
+      } else {
+        print('Missing stringValue for key: $key');
+        return '';
+      }
+    } catch (e) {
+      print('Error parsing stringValue for key: $key, error: $e');
+      return '';
+    }
+  }
+
+  // Filter residents based on criteria and value
   void filterResidents(String criteria, String value) {
     setState(() {
       filterCriteria = criteria;
       filterValue = value.toLowerCase();
 
       filteredResidents = residentsList.where((resident) {
-        final fields = resident['fields'];
+        final fields = resident['fields'] ?? {};
+
         switch (criteria) {
           case 'floor':
-            return fields['floor']['integerValue'].toString() == value;
+            int? floorValue = int.tryParse(value);
+            return floorValue != null && _getIntegerValue(fields, 'floor') == floorValue;
           case 'apartmentNumber':
-            return fields['apartmentNumber']['integerValue'].toString() == value;
+            int? aptValue = int.tryParse(value);
+            return aptValue != null && _getIntegerValue(fields, 'apartmentNumber') == aptValue;
           case 'fullName':
-            return fields['fullName']['stringValue'].toLowerCase().contains(value);
+            return _getStringValue(fields, 'fullName').toLowerCase().contains(value);
           default:
             return true;
         }
       }).toList();
 
-      // Nếu đã có sắp xếp, áp dụng lại
+      // Reapply sorting if applicable
       if (sortCriteria != null) {
         sortResidents(sortCriteria!);
       }
     });
   }
 
-  // Hàm hiển thị dialog sắp xếp
-  void showSortDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Sắp xếp theo'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: const Text('Tầng'),
-                onTap: () {
-                  sortResidents('floor');
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                title: const Text('Số căn hộ'),
-                onTap: () {
-                  sortResidents('apartmentNumber');
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                title: const Text('Tên'),
-                onTap: () {
-                  sortResidents('fullName');
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
+  // Build sort popup menu with icon and text
+  Widget buildSortPopupMenu() {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.sort),
+      onSelected: (String value) {
+        sortResidents(value);
       },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'floor',
+          child: Text('Tầng'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'apartmentNumber',
+          child: Text('Số căn hộ'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'fullName',
+          child: Text('Tên'),
+        ),
+      ],
+      tooltip: 'Sắp xếp',
     );
   }
 
-  // Hàm hiển thị dialog lọc
-  void showFilterDialog() {
-    String selectedCriteria = 'floor';
-    String inputValue = '';
+  // Build filter popup menu with icon and text
+  Widget buildFilterPopupMenu() {
+    return Row(
+      children: [
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.filter_list),
+          onSelected: (String criteria) {
+            _showFilterValueInput(criteria);
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'floor',
+              child: Text('Tầng'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'apartmentNumber',
+              child: Text('Số căn hộ'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'fullName',
+              child: Text('Họ và Tên'),
+            ),
+          ],
+          tooltip: 'Lọc',
+        ),
+        if (filterCriteria != null && filterValue.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Text(
+              getFilterDisplayText(filterCriteria!, filterValue) ?? '',
+              style: const TextStyle(fontStyle: FontStyle.italic),
+            ),
+          ),
+      ],
+    );
+  }
 
+  // Get display text for filter
+  String? getFilterDisplayText(String criteria, String value) {
+    if (value.isEmpty) return null;
+    switch (criteria) {
+      case 'floor':
+        return 'Tầng $value';
+      case 'apartmentNumber':
+        return 'Căn hộ $value';
+      case 'fullName':
+        return 'Tên "$value"';
+      default:
+        return null;
+    }
+  }
+
+  // Show dialog to input filter value
+  void _showFilterValueInput(String criteria) {
+    String inputValue = '';
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Lọc theo tiêu chí'),
-          content: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: selectedCriteria,
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          selectedCriteria = newValue;
-                        });
-                      }
-                    },
-                    items: <String>['floor', 'apartmentNumber', 'fullName'].map<DropdownMenuItem<String>>((String value) {
-                      String displayValue;
-                      switch (value) {
-                        case 'floor':
-                          displayValue = 'Tầng';
-                          break;
-                        case 'apartmentNumber':
-                          displayValue = 'Số căn hộ';
-                          break;
-                        case 'fullName':
-                          displayValue = 'Họ và Tên';
-                          break;
-                        default:
-                          displayValue = value;
-                      }
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(displayValue),
-                      );
-                    }).toList(),
-                  ),
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Giá trị',
-                    ),
-                    onChanged: (value) {
-                      inputValue = value;
-                    },
-                  ),
-                ],
-              );
+          title: Text('Nhập giá trị lọc cho ${getCriteriaDisplayText(criteria)}'),
+          content: TextField(
+            decoration: const InputDecoration(
+              labelText: 'Giá trị',
+            ),
+            onChanged: (value) {
+              inputValue = value;
             },
           ),
           actions: [
@@ -229,8 +276,13 @@ class _ResidentsTabState extends State<ResidentsTab> {
             ElevatedButton(
               onPressed: () {
                 if (inputValue.isNotEmpty) {
-                  filterResidents(selectedCriteria, inputValue);
                   Navigator.of(context).pop();
+                  filterResidents(criteria, inputValue);
+                } else {
+                  // Optionally, show a warning if input is empty
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Giá trị không được để trống.')),
+                  );
                 }
               },
               child: const Text('Áp dụng'),
@@ -241,80 +293,823 @@ class _ResidentsTabState extends State<ResidentsTab> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (isLoadingResidents) {
-      return const Center(child: CircularProgressIndicator());
+  // Helper to get display text for criteria
+  String getCriteriaDisplayText(String criteria) {
+    switch (criteria) {
+      case 'floor':
+        return 'Tầng';
+      case 'apartmentNumber':
+        return 'Số căn hộ';
+      case 'fullName':
+        return 'Họ và Tên';
+      default:
+        return '';
     }
+  }
 
-    if (residentsList.isEmpty) {
-      return const Center(child: Text('Không có cư dân nào.'));
-    }
+  // Reset filters and sorting
+  void resetFiltersAndSorting() {
+    setState(() {
+      sortCriteria = null;
+      filterCriteria = null;
+      filterValue = '';
+      filteredResidents = residentsList;
+    });
+  }
 
-    return Column(
+  // Build floor selection popup menu with icon, text, and display selected floor
+  Widget buildFloorPopupMenu() {
+    return Row(
       children: [
-        // Nút Sắp xếp và Lọc
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: showSortDialog,
-                icon: const Icon(Icons.sort),
-                label: const Text('Sắp xếp'),
-              ),
-              const SizedBox(width: 10),
-              ElevatedButton.icon(
-                onPressed: showFilterDialog,
-                icon: const Icon(Icons.filter_list),
-                label: const Text('Lọc'),
-              ),
-              const Spacer(),
-              // Nút Đặt lại bộ lọc nếu cần
-              if (filterCriteria != null || sortCriteria != null)
-                IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    setState(() {
-                      filterCriteria = null;
-                      sortCriteria = null;
-                      filteredResidents = residentsList;
-                    });
-                  },
+        PopupMenuButton<int>(
+          icon: const Icon(Icons.layers),
+          onSelected: (int floor) {
+            setState(() {
+              selectedFloor = floor;
+              // Reset selected room info when floor changes
+              selectedRoomInfo = null;
+            });
+          },
+          itemBuilder: (BuildContext context) => List<PopupMenuEntry<int>>.generate(
+            totalFloors,
+            (index) => PopupMenuItem<int>(
+              value: index + 1,
+              child: Text('Tầng ${index + 1}'),
+            ),
+          ),
+          tooltip: 'Chọn tầng',
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'Tầng $selectedFloor',
+          style: const TextStyle(fontSize: 16),
+        ),
+      ],
+    );
+  }
+
+  // Display floor selection and room squares
+  Widget buildRoomSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Floor selection popup menu with text
+        buildFloorPopupMenu(),
+        const SizedBox(height: 10),
+        // Room squares
+        Expanded(
+          flex: 3,
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 10, // Adjusted for better UI
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1, // Square cells
+            ),
+            itemCount: roomsPerFloor,
+            itemBuilder: (context, index) {
+              int roomNumber = index + 1;
+              String roomNumberStr = roomNumber < 10 ? '0$roomNumber' : '$roomNumber';
+              bool isOccupied = residentsList.any((resident) {
+                final fields = resident['fields'] ?? {};
+                return _getIntegerValue(fields, 'floor') == selectedFloor && _getIntegerValue(fields, 'apartmentNumber') == roomNumber;
+              });
+
+              return GestureDetector(
+                onTap: () {
+                  _showResidentInfo(roomNumber);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isOccupied ? Colors.greenAccent : Colors.blueAccent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      roomNumberStr,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ),
-            ],
+              );
+            },
           ),
         ),
+        const SizedBox(height: 10),
+        // Display selected room info
+        if (selectedRoomInfo != null)
+          Expanded(
+            flex: 5,
+            child: SingleChildScrollView(
+              child: buildResidentInfoCard(selectedRoomInfo!),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // Show resident information (updates the state to display below the grid)
+  void _showResidentInfo(int roomNumber) {
+    print('Selected Floor: $selectedFloor, Room Number: $roomNumber');
+    Map<String, dynamic>? resident;
+    try {
+      resident = residentsList.firstWhere((resident) {
+        final fields = resident['fields'] ?? {};
+        int residentFloor = _getIntegerValue(fields, 'floor');
+        int residentRoom = _getIntegerValue(fields, 'apartmentNumber');
+        print('Checking Resident - Floor: $residentFloor, Room: $residentRoom');
+        return residentFloor == selectedFloor && residentRoom == roomNumber;
+      });
+    } catch (e) {
+      resident = null;
+    }
+
+    if (resident != null) {
+      final fields = resident['fields'];
+      if (fields != null) {
+        setState(() {
+          selectedRoomInfo = Map<String, dynamic>.from(fields);
+          print('Selected Resident Info: $selectedRoomInfo');
+        });
+      } else {
+        setState(() {
+          selectedRoomInfo = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không tìm thấy dữ liệu cư dân.')),
+        );
+      }
+    } else {
+      // Handle when no resident is found in the room
+      setState(() {
+        selectedRoomInfo = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không tìm thấy cư dân trong căn hộ này.')),
+      );
+    }
+  }
+
+  // Build resident info card
+  Widget buildResidentInfoCard(Map<String, dynamic> info) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Thông tin căn hộ ${_getIntegerValue(info, 'apartmentNumber')}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text('Họ và Tên: ${_getStringValue(info, 'fullName')}'),
+            Text('Giới tính: ${_getStringValue(info, 'gender')}'),
+            Text('Ngày sinh: ${_getStringValue(info, 'dob').isNotEmpty ? formatDob(_getStringValue(info, 'dob')) : ''}'),
+            Text('Số điện thoại: ${_getStringValue(info, 'phone')}'),
+            Text('Số ID: ${_getStringValue(info, 'id')}'),
+            Text('Email: ${_getStringValue(info, 'email')}'),
+            Text('Tầng: ${_getIntegerValue(info, 'floor')}'),
+            Text('Căn hộ số: ${_getIntegerValue(info, 'apartmentNumber')}'),
+            Text('Trạng thái: ${_getStringValue(info, 'status')}'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build residents list with edit and delete functionality
+  Widget buildResidentsList() {
+    return Column(
+      // Set mainAxisSize to min to allow Column to size itself based on children
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Display total number of residents
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2.0),
+          child: Text(
+            'Tổng số cư dân: ${residentsList.length}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        // Header Card
+        Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero, // No rounded corners
+          ),
+          color: Colors.grey[300],
+          child: Container(
+            width: double.infinity, // Ensure Row expands full width
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
+            child: Row(
+              children: const [
+                Expanded(
+                  flex: 2, // Adjusted flex
+                  child: Text(
+                    'Tên cư dân',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Expanded(
+                  flex: 2, // Adjusted flex
+                  child: Text(
+                    'Số tầng',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Expanded(
+                  flex: 2, // Adjusted flex
+                  child: Text(
+                    'Số căn hộ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Expanded(
+                  flex: 1, // For icons
+                  child: Text(
+                    '',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                // Additional column for edit/delete icons
+              ],
+            ),
+          ),
+        ),
+        // Expanded ListView
         Expanded(
           child: filteredResidents.isEmpty
-              ? const Center(child: Text('Không có kết quả phù hợp với tiêu chí lọc.'))
+              ? const Center(
+                  child: Text('Không có cư dân nào được tìm thấy.'),
+                )
               : ListView.builder(
                   itemCount: filteredResidents.length,
                   itemBuilder: (context, index) {
                     final doc = filteredResidents[index];
-                    final fields = doc['fields'];
-                    return Card(
-                      child: ListTile(
-                        title: Text(fields['fullName']['stringValue']),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Giới tính: ${fields['gender']['stringValue']}'),
-                            Text('Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
-                            Text('Số điện thoại: ${fields['phone']['stringValue']}'),
-                            Text('Số ID: ${fields['id']['stringValue']}'),
-                            Text('Email: ${fields['email']['stringValue']}'),
-                            Text('Tầng: ${fields['floor']['integerValue']}'),
-                            Text('Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
-                            Text('Trạng thái: ${fields['status']['stringValue']}'),
-                          ],
-                        ),
-                      ),
+                    final name = doc['name']; // Firestore document name
+                    final fields = doc['fields'] ?? {};
+
+                    return ResidentListItem(
+                      documentName: name, // Pass the document name
+                      resident: fields,
+                      onUpdate: ({
+                        required int apartmentNumber,
+                        required String dob,
+                        required String email,
+                        required int floor,
+                        required String fullName,
+                        required String gender,
+                        required String id,
+                        required String phone,
+                      }) async {
+                        try {
+                          await widget.adminRepository.updateResident(
+                            documentName: name,
+                            apartmentNumber: apartmentNumber,
+                            dob: dob,
+                            email: email,
+                            floor: floor,
+                            fullName: fullName,
+                            gender: gender,
+                            id: id,
+                            phone: phone,
+                            idToken: widget.idToken,
+                          );
+
+                          setState(() {
+                            // Update the local residentsList
+                            int originalIndex = residentsList.indexWhere((resident) => resident['name'] == name);
+                            if (originalIndex != -1) {
+                              residentsList[originalIndex]['fields'] = {
+                                'apartmentNumber': {'integerValue': apartmentNumber},
+                                'dob': {'stringValue': dob},
+                                'email': {'stringValue': email},
+                                'floor': {'integerValue': floor},
+                                'fullName': {'stringValue': fullName},
+                                'gender': {'stringValue': gender},
+                                'id': {'stringValue': id},
+                                'phone': {'stringValue': phone},
+                                'status': {'stringValue': 'Đã duyệt'},
+                              };
+                            }
+
+                            // Reapply filter and sort if necessary
+                            if (filterCriteria != null && filterValue.isNotEmpty) {
+                              filterResidents(filterCriteria!, filterValue);
+                            }
+                            if (sortCriteria != null) {
+                              sortResidents(sortCriteria!);
+                            }
+                          });
+
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Cập nhật cư dân thành công.')),
+                          );
+                        } catch (e) {
+                          // Show error message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Lỗi khi cập nhật cư dân: $e')),
+                          );
+                        }
+                      },
+                      onDelete: () async {
+                        // Confirm deletion and delete resident from Firestore
+                        bool confirm = await _showDeleteConfirmationDialog();
+                        if (confirm) {
+                          try {
+                            await widget.adminRepository.deleteResident(
+                              documentName: name,
+                              idToken: widget.idToken,
+                            );
+                            setState(() {
+                              residentsList.remove(doc);
+                              // Reapply filter and sort if necessary
+                              if (filterCriteria != null && filterValue.isNotEmpty) {
+                                filterResidents(filterCriteria!, filterValue);
+                              }
+                              if (sortCriteria != null) {
+                                sortResidents(sortCriteria!);
+                              }
+                            });
+
+                            // Show success message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Xóa cư dân thành công.')),
+                            );
+                          } catch (e) {
+                            // Show error message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Lỗi khi xóa cư dân: $e')),
+                            );
+                          }
+                        }
+                      },
                     );
                   },
                 ),
         ),
       ],
+    );
+  }
+
+  // Show delete confirmation dialog
+  Future<bool> _showDeleteConfirmationDialog() async {
+    bool confirm = false;
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Xác nhận xóa'),
+          content: const Text('Bạn có chắc chắn muốn xóa cư dân này?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                confirm = false;
+              },
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                confirm = true;
+              },
+              child: const Text('Xóa'),
+            ),
+          ],
+        );
+      },
+    );
+    return confirm;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Use LayoutBuilder to adjust layout based on screen size
+    return isLoadingResidents
+        ? const Center(child: CircularProgressIndicator())
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 800; // Define breakpoint
+              return isWide
+                  ? Row(
+                      children: [
+                        // Left Column: Residents List
+                        Flexible(
+                          flex: 1,
+                          child: Container(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              // Set mainAxisSize to max to fill the available space
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                // Sort and Filter Popup Menus with labels
+                                Row(
+                                  children: [
+                                    // Sort Menu with Icon and Text
+                                    Row(
+                                      children: [
+                                        buildSortPopupMenu(),
+                                        const SizedBox(width: 6),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 10),
+                                    // Filter Menu with Icon and Text
+                                    Row(
+                                      children: [
+                                        buildFilterPopupMenu(),
+                                        const SizedBox(width: 4),
+                                      ],
+                                    ),
+                                    const Spacer(),
+                                    // Reset Filters and Sorting Button
+                                    if (filterCriteria != null || sortCriteria != null)
+                                      IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: resetFiltersAndSorting,
+                                        tooltip: 'Đặt lại bộ lọc và sắp xếp',
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                // Residents List
+                                Expanded(
+                                  child: buildResidentsList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Vertical Divider
+                        const VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                        // Right Column: Room Selection
+                        Flexible(
+                          flex: 1,
+                          child: Container(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'Chọn phòng',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 10),
+                                Expanded(
+                                  child: buildRoomSelection(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        // Sort and Filter Popup Menus with labels
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              // Sort Menu with Icon and Text
+                              Row(
+                                children: [
+                                  buildSortPopupMenu(),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    'Sắp xếp',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 10),
+                              // Filter Menu with Icon and Text
+                              Row(
+                                children: [
+                                  buildFilterPopupMenu(),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    'Lọc',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                              // Reset Filters and Sorting Button
+                              if (filterCriteria != null || sortCriteria != null)
+                                IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: resetFiltersAndSorting,
+                                  tooltip: 'Đặt lại bộ lọc và sắp xếp',
+                                ),
+                            ],
+                          ),
+                        ),
+                        // Residents List
+                        Expanded(
+                          flex: 1,
+                          child: buildResidentsList(),
+                        ),
+                        // Room Selection
+                        Expanded(
+                          flex: 1,
+                          child: Container(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'Chọn phòng',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 10),
+                                Expanded(
+                                  child: buildRoomSelection(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+            },
+          );
+  }
+}
+
+// Widget for individual resident list item with edit and delete functionality
+class ResidentListItem extends StatefulWidget {
+  final String documentName; // Firestore document name
+  final Map<String, dynamic> resident;
+  final Function({
+    required int apartmentNumber,
+    required String dob,
+    required String email,
+    required int floor,
+    required String fullName,
+    required String gender,
+    required String id,
+    required String phone,
+  }) onUpdate;
+  final Function onDelete;
+
+  const ResidentListItem({
+    Key? key,
+    required this.documentName,
+    required this.resident,
+    required this.onUpdate,
+    required this.onDelete,
+  }) : super(key: key);
+
+  @override
+  _ResidentListItemState createState() => _ResidentListItemState();
+}
+
+class _ResidentListItemState extends State<ResidentListItem> {
+  bool isEditing = false;
+
+  // Controllers for editable fields
+  late TextEditingController fullNameController;
+  late TextEditingController genderController;
+  late TextEditingController dobController;
+  late TextEditingController phoneController;
+  late TextEditingController idController;
+  late TextEditingController emailController;
+  late TextEditingController floorController;
+  late TextEditingController apartmentNumberController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with existing values or empty strings
+    fullNameController = TextEditingController(
+      text: widget.resident['fullName']?['stringValue'] ?? '',
+    );
+    genderController = TextEditingController(
+      text: widget.resident['gender']?['stringValue'] ?? '',
+    );
+    dobController = TextEditingController(
+      text: widget.resident['dob']?['stringValue'] ?? '',
+    );
+    phoneController = TextEditingController(
+      text: widget.resident['phone']?['stringValue'] ?? '',
+    );
+    idController = TextEditingController(
+      text: widget.resident['id']?['stringValue'] ?? '',
+    );
+    emailController = TextEditingController(
+      text: widget.resident['email']?['stringValue'] ?? '',
+    );
+    floorController = TextEditingController(
+      text: widget.resident['floor']?['integerValue']?.toString() ?? '',
+    );
+    apartmentNumberController = TextEditingController(
+      text: widget.resident['apartmentNumber']?['integerValue']?.toString() ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    fullNameController.dispose();
+    genderController.dispose();
+    dobController.dispose();
+    phoneController.dispose();
+    idController.dispose();
+    emailController.dispose();
+    floorController.dispose();
+    apartmentNumberController.dispose();
+    super.dispose();
+  }
+
+  // Save changes and update the resident
+  void saveChanges() {
+    String updatedFullName = fullNameController.text.trim();
+    String updatedGender = genderController.text.trim();
+    String updatedDob = dobController.text.trim();
+    String updatedPhone = phoneController.text.trim();
+    String updatedId = idController.text.trim();
+    String updatedEmail = emailController.text.trim();
+    String updatedFloor = floorController.text.trim();
+    String updatedApartmentNumber = apartmentNumberController.text.trim();
+
+    if (updatedFullName.isEmpty || updatedGender.isEmpty || updatedDob.isEmpty || updatedPhone.isEmpty || updatedId.isEmpty || updatedEmail.isEmpty || updatedFloor.isEmpty || updatedApartmentNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin.')),
+      );
+      return;
+    }
+
+    // Validate numeric fields
+    int? floor = int.tryParse(updatedFloor);
+    int? apartmentNumber = int.tryParse(updatedApartmentNumber);
+
+    if (floor == null || apartmentNumber == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tầng và số căn hộ phải là số nguyên.')),
+      );
+      return;
+    }
+
+    // Call the onUpdate callback with the updated data
+    widget.onUpdate(
+      apartmentNumber: apartmentNumber,
+      dob: updatedDob,
+      email: updatedEmail,
+      floor: floor,
+      fullName: updatedFullName,
+      gender: updatedGender,
+      id: updatedId,
+      phone: updatedPhone,
+    );
+
+    setState(() {
+      isEditing = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero, // No rounded corners for consistency
+      ),
+      margin: EdgeInsets.zero, // No spacing between cards
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: isEditing
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Editable Info Fields
+                  TextField(
+                    controller: fullNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Họ và Tên',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: genderController,
+                    decoration: const InputDecoration(
+                      labelText: 'Giới tính',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: dobController,
+                    decoration: const InputDecoration(
+                      labelText: 'Ngày sinh (dd/MM/yyyy)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Số điện thoại',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: idController,
+                    decoration: const InputDecoration(
+                      labelText: 'Số ID',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: floorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tầng',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: apartmentNumberController,
+                    decoration: const InputDecoration(
+                      labelText: 'Số căn hộ',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 10),
+                  // Save Changes Button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: saveChanges,
+                      child: const Text('Lưu thay đổi'),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  // Họ và Tên
+                  Expanded(
+                    flex: 2, // Adjusted to match header
+                    child: Text(
+                      widget.resident['fullName']?['stringValue'] ?? '',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  // Tầng
+                  Expanded(
+                    flex: 2, // Adjusted to match header
+                    child: Text(
+                      widget.resident['floor']?['integerValue']?.toString() ?? '',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  // Số căn hộ
+                  Expanded(
+                    flex: 2, // Adjusted to match header
+                    child: Text(
+                      widget.resident['apartmentNumber']?['integerValue']?.toString() ?? '',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  // Edit and Delete Icons
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () {
+                      setState(() {
+                        isEditing = true;
+                      });
+                    },
+                    tooltip: 'Chỉnh sửa',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      // Handle deletion
+                      widget.onDelete();
+                    },
+                    tooltip: 'Xóa',
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

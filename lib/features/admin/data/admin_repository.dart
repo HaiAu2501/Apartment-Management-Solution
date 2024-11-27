@@ -202,6 +202,83 @@ class AdminRepository {
     }
   }
 
+  // Hàm cập nhật cư dân
+  Future<void> updateResident({
+    required String documentName, // Full path of the document
+    required int apartmentNumber,
+    required String dob,
+    required String email,
+    required int floor,
+    required String fullName,
+    required String gender,
+    required String id,
+    required String phone,
+    required String idToken,
+  }) async {
+    // Prepare the fields to update
+    Map<String, dynamic> updatedFields = {
+      'apartmentNumber': {'integerValue': apartmentNumber},
+      'dob': {'stringValue': dob},
+      'email': {'stringValue': email},
+      'floor': {'integerValue': floor},
+      'fullName': {'stringValue': fullName},
+      'gender': {'stringValue': gender},
+      'id': {'stringValue': id},
+      'phone': {'stringValue': phone},
+      // 'status' is fixed as "Đã duyệt" and should not be updated here
+    };
+
+    // Create the updateMask for the fields being updated
+    String updateMask = updatedFields.keys.map((field) => 'updateMask.fieldPaths=$field').join('&');
+
+    // Construct the Firestore REST API URL for updating the document
+    final url = 'https://firestore.googleapis.com/v1/$documentName?key=$apiKey&$updateMask';
+
+    // Send the PATCH request to Firestore
+    final response = await http.patch(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'fields': updatedFields,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      // Update successful
+      return;
+    } else {
+      throw Exception('Lỗi khi cập nhật cư dân: ${response.statusCode} ${response.body}');
+    }
+  }
+
+  // Hàm xóa cư dân
+  Future<void> deleteResident({
+    required String documentName, // Full path of the document
+    required String idToken,
+  }) async {
+    // Construct the Firestore REST API URL for deleting the document
+    final url = 'https://firestore.googleapis.com/v1/$documentName?key=$apiKey';
+
+    // Send the DELETE request to Firestore
+    final response = await http.delete(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      // Deletion successful
+      return;
+    } else {
+      throw Exception('Lỗi khi xóa cư dân: ${response.statusCode} ${response.body}');
+    }
+  }
+
   // Helper function để mã hóa trường dữ liệu
   Map<String, dynamic> _encodeField(dynamic value) {
     if (value is String) {

@@ -1,7 +1,7 @@
 // lib/features/admin/presentation/widgets/daily_event_box.dart
 
 import 'package:flutter/material.dart';
-import '../../domain/events.dart';
+import '../../../admin/domain/events.dart';
 import 'package:intl/intl.dart';
 
 class DailyEventBox extends StatelessWidget {
@@ -39,6 +39,7 @@ class DailyEventBox extends StatelessWidget {
         itemBuilder: (context, index) {
           final event = events[index];
           return Card(
+            color: Colors.blue[50],
             margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4), // Adds spacing between cards
             child: ExpansionTile(
               leading: const Icon(Icons.event, color: Colors.black),
@@ -52,15 +53,7 @@ class DailyEventBox extends StatelessWidget {
                         fontSize: 16,
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () => onEdit(event),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => onDelete(event),
-                  ),
+                  )
                 ],
               ),
               children: [
@@ -105,7 +98,7 @@ class DailyEventBox extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // Changed to white for better contrast
+        color: Colors.yellow[50], // Changed to white for better contrast
         borderRadius: BorderRadius.circular(10),
       ),
       padding: const EdgeInsets.all(12),
