@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'widgets/fee_table.dart';
 import 'widgets/fee_form.dart';
+import 'widgets/fee_statistics.dart';
 import '../data/fees_repository.dart';
 import '../../.authentication/data/auth_service.dart';
 import '../../.authentication/presentation/login_page.dart';
@@ -60,10 +61,21 @@ class _FeesPageState extends State<FeesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FeeTable(
-        key: _feeTableKey,
-        feesRepository: feesRepository,
-        idToken: widget.idToken,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const FeeStatistics(), // Thêm widget thống kê ở đây
+            const SizedBox(height: 16),
+            Expanded(
+              child: FeeTable(
+                key: _feeTableKey,
+                feesRepository: feesRepository,
+                idToken: widget.idToken,
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFeeForm(),

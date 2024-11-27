@@ -26,6 +26,7 @@ dependencies:
   weather: 3.1.1
   cached_network_image: ^3.4.1
   fluentui_system_icons: ^1.1.261
+  fl_chart: ^0.69.2
 
 # List of packages that the project depends on for development
 dev_dependencies:
