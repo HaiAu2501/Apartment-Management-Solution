@@ -23,7 +23,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
   Complaint? selectedComplaint;
   int? hoveredTileIndex;
   List<Complaint> chosenList = [];
-  List<Complaint> updateQueue = [];
+  
   bool showInputField = false;
   final FocusNode inputFocusNode = FocusNode();
   final TextEditingController _commentController = TextEditingController();
@@ -147,24 +147,18 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
         throw Exception('User not authenticated');
       }
       Map<String, dynamic> updatedData = complaint.toFirestore();
-      await complaintsRepository.updateComplaint(
+       complaintsRepository.updateComplaint(
         complaint.id,
         updatedData,
         idToken,
       );
-      updateQueue.remove(complaint);
+      
     } catch (e) {
       print('Error updating complaint: $e');
     }
   }
 
-  // void _addUpdateQueue(Complaint complaint) {
-  //   setState(() {
-  //     if (!updateQueue.contains(complaint)) {
-  //       updateQueue.add(complaint);
-  //     }
-  //   });
-  // }
+
 
   String splitTextIntoLines(String inputText, int maxLineLength) {
     List<String> resultLines = [];

@@ -11,7 +11,7 @@ class Complaint {
   bool isFlagged;
   List<Map<String, dynamic>> comments;
   final Color bgColor;
-   String id;
+  String id;
   bool chosen;
 
   Complaint({
@@ -22,11 +22,12 @@ class Complaint {
     required this.date,
     required this.id,
     required this.isFlagged,
-    this.comments = const [],
+    
     this.chosen = false,
     required this.bgColor,
     this.status = 'Mới',
-  });
+    List<Map<String, dynamic>>? comments,
+  }): comments = comments ?? [];
   @override
   String toString() {
     return 'Complaint(uid: $uid)';

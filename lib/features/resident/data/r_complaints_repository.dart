@@ -1,3 +1,4 @@
+import '../domain/r_complaints.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -20,13 +21,15 @@ class ComplaintsRepository {
 
     do {
       // Tạo URL với phân trang và sắp xếp theo ngày
-      String url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/complaints?key=$apiKey&pageSize=$pageSize&orderBy=date';
+      String url =
+          'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/complaints?key=$apiKey&pageSize=$pageSize&orderBy=date';
 
       if (nextPageToken != null && nextPageToken.isNotEmpty) {
         url += '&pageToken=$nextPageToken';
       }
 
       try {
+       
         final response = await http.get(
           Uri.parse(url),
           headers: {
@@ -41,7 +44,8 @@ class ComplaintsRepository {
           allDocuments.addAll(documents);
           nextPageToken = data['nextPageToken'];
         } else {
-          throw Exception('Error fetching complaints: ${response.statusCode} ${response.body}');
+          throw Exception(
+              'Error fetching complaints: ${response.statusCode} ${response.body}');
         }
       } catch (e) {
         print('Exception in fetchAllComplaints: $e');
@@ -53,7 +57,8 @@ class ComplaintsRepository {
   }
 
   /// Lấy một complaint cụ thể bằng tên tài liệu
-  Future<Map<String, dynamic>> fetchComplaintByName(String documentName, String idToken) async {
+  Future<Map<String, dynamic>> fetchComplaintByName(
+      String documentName, String idToken) async {
     final url = 'https://firestore.googleapis.com/v1/$documentName?key=$apiKey';
 
     try {
@@ -69,7 +74,8 @@ class ComplaintsRepository {
         final data = jsonDecode(response.body);
         return data;
       } else {
-        throw Exception('Error fetching complaint: ${response.statusCode} ${response.body}');
+        throw Exception(
+            'Error fetching complaint: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       print('Exception in fetchComplaintByName: $e');
@@ -77,9 +83,38 @@ class ComplaintsRepository {
     }
   }
 
+  // lay ten user
+    Future<Map<String,dynamic>> getUserData(
+      String documentId, String idToken) async {
+    final url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/residents/$documentId?key=$apiKey';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $idToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data;
+      } else {
+        throw Exception(
+            'Error fetching complaint: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Exception in getUserName: $e');
+     
+      rethrow;
+    }
+  }
   /// Thêm một complaint mới
-  Future<void> addComplaint(Map<String, dynamic> complaintData, String idToken) async {
-    final url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/complaints?key=$apiKey';
+  Future<void> addComplaint(Map<String, dynamic> complaintData, String idToken,
+      Complaint newComplaint) async {
+    final url =
+        'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/complaints?key=$apiKey';
 
     try {
       final response = await http.post(
@@ -89,21 +124,28 @@ class ComplaintsRepository {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'fields': complaintData.map((key, value) => MapEntry(key, _encodeField(value))),
+          'fields': complaintData
+              .map((key, value) => MapEntry(key, _encodeField(value))),
         }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Complaint added successfully.');
+        final responseData = jsonDecode(response.body);
+        final documentId = responseData['name'].split('/').last;
+
+        print('Complaint added successfully. Document ID: $documentId');
+        newComplaint.id='projects/apartment-management-solution/databases/(default)/documents/complaints/$documentId';
       } else {
-        throw Exception('Error adding complaint: ${response.statusCode} ${response.body}');
+        throw Exception(
+            'Error adding complaint: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       print('Exception in addComplaint: $e');
       rethrow;
     }
   }
-  Future<void> updateComplaint(String documentId, Map<String, dynamic> updatedData, String idToken) async {
+
+Future<void> updateComplaint(String documentId, Map<String, dynamic> updatedData, String idToken) async {
  
   String updateMask = updatedData.keys.map((field) => 'updateMask.fieldPaths=$field').join('&');
 
@@ -135,6 +177,9 @@ class ComplaintsRepository {
 }
 
 
+
+
+
   /// Xóa một complaint
   Future<void> deleteComplaint(String documentPath, String idToken) async {
     final url = 'https://firestore.googleapis.com/v1/$documentPath?key=$apiKey';
@@ -151,7 +196,8 @@ class ComplaintsRepository {
       if (response.statusCode == 200) {
         print('Complaint deleted successfully.');
       } else {
-        throw Exception('Error deleting complaint: ${response.statusCode} ${response.body}');
+        throw Exception(
+            'Error deleting complaint: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       print('Exception in deleteComplaint: $e');

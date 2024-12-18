@@ -397,6 +397,7 @@ class _LoginPageState extends State<LoginPage> {
 
   // Hàm xây dựng form đăng nhập
   Widget buildLoginForm() {
+
     return Form(
       key: _formKey,
       child: Column(
@@ -413,6 +414,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 24),
           TextFormField(
+            onFieldSubmitted: (_) => handleLogin(),
             controller: emailController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.email),
@@ -452,6 +454,7 @@ class _LoginPageState extends State<LoginPage> {
               }
               return null;
             },
+            onFieldSubmitted: (_) => handleLogin(),
           ),
           const SizedBox(height: 5),
           Align(

@@ -61,7 +61,9 @@ class _ResidentHomePageState extends State<ResidentHomePage> {
       EventsPage(
         authService: widget.authService,
       ), // 2: Sự kiện
-      const ComplaintsPage(), //3: Khiếu nại
+      ComplaintsPage(
+        authService: widget.authService,
+      ), //3: Khiếu nại
       // 4: Đăng xuất sẽ được xử lý riêng
     ];
   }
