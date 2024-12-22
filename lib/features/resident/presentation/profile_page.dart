@@ -1,147 +1,283 @@
 // lib/resident/presentation/profile_page.dart
 
 import 'package:flutter/material.dart';
+import '../data/resident_repository.dart';
+
+/// Lớp mô tả một phương tiện
+class Vehicle {
+  String type;
+  String number;
+
+  Vehicle({required this.type, required this.number});
+
+  /// Tạo một phương tiện từ một Map
+  factory Vehicle.fromMap(Map<String, dynamic> map) {
+    return Vehicle(
+      type: map['type'] ?? '',
+      number: map['number'] ?? '',
+    );
+  }
+
+  /// Chuyển đổi phương tiện thành Map<String, String>
+  Map<String, String> toMap() {
+    return {
+      'type': type,
+      'number': number,
+    };
+  }
+}
+
+/// Lớp mô tả một thành viên
+class Member {
+  String relationship;
+  String name;
+
+  Member({required this.relationship, required this.name});
+
+  /// Tạo một thành viên từ một Map
+  factory Member.fromMap(Map<String, dynamic> map) {
+    return Member(
+      relationship: map['relationship'] ?? '',
+      name: map['name'] ?? '',
+    );
+  }
+
+  /// Chuyển đổi thành viên thành Map<String, String>
+  Map<String, String> toMap() {
+    return {
+      'relationship': relationship,
+      'name': name,
+    };
+  }
+}
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final String uid; // UID của người dùng
+  final String idToken;
+  final ResidentRepository residentRepository;
+
+  const ProfilePage({
+    Key? key,
+    required this.uid,
+    required this.idToken,
+    required this.residentRepository,
+  }) : super(key: key);
 
   @override
   _ProfilePageState createState() => _ProfilePageState();
-}
-
-class Member {
-  String relation;
-  String name;
-  final TextEditingController relationController;
-  final TextEditingController nameController;
-
-  Member({this.relation = '', this.name = ''})
-      : relationController = TextEditingController(text: relation),
-        nameController = TextEditingController(text: name);
-
-  void dispose() {
-    relationController.dispose();
-    nameController.dispose();
-  }
-}
-
-class Vehicle {
-  String type;
-  String name;
-  final TextEditingController nameController;
-
-  Vehicle({this.type = 'Ô tô', this.name = ''}) : nameController = TextEditingController(text: name);
-
-  void dispose() {
-    nameController.dispose();
-  }
 }
 
 class _ProfilePageState extends State<ProfilePage> {
   // Trạng thái chỉnh sửa
   bool isEditing = false;
 
-  // Các controller cho các TextField
-  final TextEditingController householdHeadController = TextEditingController(text: "Nguyễn Văn A"); // householdHead
-  final TextEditingController dobController = TextEditingController(text: "01/01/1980"); // dob
-  final TextEditingController occupationController = TextEditingController(text: "Kỹ sư phần mềm"); // occupation
-  final TextEditingController emailController = TextEditingController(text: "nguyenvana@example.com"); // email
-  final TextEditingController apartmentNumberController = TextEditingController(text: "A-101"); // apartmentNumber
-  final TextEditingController floorController = TextEditingController(text: "10"); // floor
+  // Trạng thái tải dữ liệu
+  bool isLoading = true;
+  String? errorMessage;
 
-  // Danh sách thành viên
-  List<Member> members = [
-    Member(relation: "Vợ", name: "Nguyễn Văn B"),
-    Member(relation: "Con trai", name: "Nguyễn Văn C"),
-    Member(relation: "Con gái", name: "Nguyễn Văn D"),
+  // Các controller cho các TextField từ collection 'residents'
+  final TextEditingController idController = TextEditingController();
+  final TextEditingController apartmentNumberController = TextEditingController();
+  final TextEditingController dobController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController floorController = TextEditingController();
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController genderController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController statusController = TextEditingController();
+
+  // Các controller cho các TextField từ collection 'profiles'
+  final TextEditingController emergencyContactsController = TextEditingController();
+  final TextEditingController householdHeadController = TextEditingController();
+  final TextEditingController moveInDateController = TextEditingController();
+  final TextEditingController moveOutDateController = TextEditingController();
+  final TextEditingController occupationController = TextEditingController();
+  final TextEditingController utilitiesController = TextEditingController();
+  final TextEditingController vehiclesController = TextEditingController();
+
+  String? profileId; // Biến lưu trữ profileId
+
+  // Danh sách các tiện ích có sẵn
+  final List<String> availableUtilities = [
+    'Điện',
+    'Nước',
+    'Internet',
+    'Gas',
+    'Vệ sinh',
+    'An ninh',
   ];
 
-  // Danh sách liên hệ khẩn cấp
-  List<TextEditingController> emergencyContactControllers = [
-    TextEditingController(text: "0123456789"),
-    TextEditingController(text: "0987654321"),
-  ];
+  // Trạng thái các tiện ích được chọn
+  Map<String, bool> selectedUtilities = {};
 
   // Danh sách phương tiện
-  List<Vehicle> vehicles = [
-    Vehicle(type: "Ô tô", name: "ABC-123"),
-    Vehicle(type: "Xe máy", name: "XYZ-789"),
-  ];
+  List<Vehicle> vehicles = [];
 
-  // Danh sách tiện ích từ danh sách có sẵn
-  final List<String> predefinedUtilities = [
-    "Điện",
-    "Nước",
-    "Internet",
-    "Đỗ xe",
-    "An ninh",
-    "Gym",
-    "Hồ bơi",
-    "Sân chơi trẻ em",
-    "Phòng sinh hoạt cộng đồng",
-    "Cửa hàng tiện lợi",
-    "Khu BBQ",
-    "Phòng giặt ủi",
-    "Điều hòa chung",
-    "Thang máy",
-    "Khu vườn xanh",
-  ];
-  List<String> selectedUtilities = ["Điện", "Nước", "Internet"];
+  // Danh sách thành viên
+  List<Member> members = [];
 
-  final TextEditingController phoneNumberController = TextEditingController(text: "0987654321"); // phoneNumber
+  @override
+  void initState() {
+    super.initState();
+    // Khởi tạo trạng thái các tiện ích
+    for (var utility in availableUtilities) {
+      selectedUtilities[utility] = false;
+    }
+    // Fetch dữ liệu từ 'residents' và 'profiles'
+    fetchResidentAndProfileData();
+  }
 
-  final TextEditingController idController = TextEditingController(text: "123456789"); // id
-  final TextEditingController moveInDateController = TextEditingController(text: "01/01/2020"); // moveInDate
-  final TextEditingController moveOutDateController = TextEditingController(text: ""); // moveOutDate
-  final TextEditingController statusController = TextEditingController(text: "Đang cư trú"); // status
+  Future<void> fetchResidentAndProfileData() async {
+    try {
+      // Bước 1: Fetch dữ liệu từ collection 'residents'
+      final residentData = await widget.residentRepository.fetchResident(widget.uid, widget.idToken);
+
+      print('Fetched resident data: $residentData'); // Debug print
+
+      setState(() {
+        // Gán giá trị từ 'residents' vào các controller
+        idController.text = residentData['id']?.toString() ?? widget.uid;
+        apartmentNumberController.text = residentData['apartmentNumber']?.toString() ?? '';
+        dobController.text = residentData['dob'] ?? '';
+        emailController.text = residentData['email'] ?? '';
+        floorController.text = residentData['floor']?.toString() ?? '';
+        fullNameController.text = residentData['fullName'] ?? '';
+        genderController.text = residentData['gender'] ?? '';
+        phoneController.text = residentData['phone'] ?? '';
+        statusController.text = residentData['status'] ?? 'Đang cư trú';
+
+        // Kiểm tra sự tồn tại của profileId
+        if (residentData.containsKey('profileId')) {
+          profileId = residentData['profileId'];
+        } else {
+          profileId = null;
+        }
+
+        if (profileId == null) {
+          // Nếu không có profileId, đặt các trường liên quan đến profiles thành trống
+          emergencyContactsController.text = '';
+          householdHeadController.text = '';
+          moveInDateController.text = '';
+          moveOutDateController.text = '';
+          occupationController.text = '';
+          utilitiesController.text = '';
+
+          // Đặt lại trạng thái các tiện ích
+          for (var utility in availableUtilities) {
+            selectedUtilities[utility] = false;
+          }
+
+          // Đặt lại danh sách phương tiện và thành viên
+          vehicles = [];
+          members = [];
+        }
+      });
+
+      if (profileId != null) {
+        // Bước 2: Nếu profileId tồn tại, fetch dữ liệu từ collection 'profiles'
+        final profileData = await widget.residentRepository.fetchProfile(profileId!, widget.idToken);
+        print('Fetched profile data: $profileData'); // Debug print
+
+        setState(() {
+          // Gán giá trị từ 'profiles' vào các controller
+          emergencyContactsController.text = _convertToStringList(profileData['emergencyContacts']);
+          householdHeadController.text = profileData['householdHead'] ?? '';
+          moveInDateController.text = profileData['moveInDate'] ?? '';
+          moveOutDateController.text = profileData['moveOutDate'] ?? '';
+          occupationController.text = profileData['occupation'] ?? '';
+          utilitiesController.text = _convertToStringList(profileData['utilities']);
+
+          // Cập nhật trạng thái các tiện ích được chọn
+          List<dynamic> utilitiesList = _convertToList(profileData['utilities']);
+          for (var utility in utilitiesList) {
+            if (selectedUtilities.containsKey(utility)) {
+              selectedUtilities[utility] = true;
+            }
+          }
+
+          // Cập nhật danh sách phương tiện
+          List<dynamic> vehiclesList = _convertToList(profileData['vehicles']);
+          vehicles = vehiclesList.map((v) {
+            if (v is Map<String, dynamic>) {
+              return Vehicle.fromMap(v);
+            } else {
+              return Vehicle(type: '', number: '');
+            }
+          }).toList();
+
+          // Cập nhật danh sách thành viên
+          List<dynamic> membersList = _convertToList(profileData['members']);
+          members = membersList.map((m) {
+            if (m is Map<String, dynamic>) {
+              return Member.fromMap(m);
+            } else {
+              return Member(relationship: '', name: '');
+            }
+          }).toList();
+        });
+      }
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+      print('Error fetching resident or profile data: $e'); // Debug print
+    }
+  }
+
+  /// Hàm chuyển đổi dữ liệu thành chuỗi, hỗ trợ cả List và Map
+  String _convertToStringList(dynamic data) {
+    if (data is List) {
+      return data.join(', ');
+    } else if (data is Map<String, dynamic>) {
+      return data.values.join(', ');
+    }
+    return '';
+  }
+
+  /// Hàm chuyển đổi dữ liệu thành List<dynamic>, hỗ trợ cả List và Map
+  List<dynamic> _convertToList(dynamic data) {
+    if (data is List) {
+      return data;
+    } else if (data is Map<String, dynamic>) {
+      return data.values.toList();
+    }
+    return [];
+  }
 
   @override
   void dispose() {
-    // Giải phóng các controller khi widget bị hủy
-    householdHeadController.dispose();
-    dobController.dispose();
-    occupationController.dispose();
-    emailController.dispose();
-    apartmentNumberController.dispose();
-    floorController.dispose();
-    // Giải phóng các controller của liên hệ khẩn cấp
-    for (var controller in emergencyContactControllers) {
-      controller.dispose();
-    }
-    // Giải phóng các controller của thành viên
-    for (var member in members) {
-      member.dispose();
-    }
-    // Giải phóng các controller của phương tiện
-    for (var vehicle in vehicles) {
-      vehicle.dispose();
-    }
-    // Giải phóng các controller khác
+    // Dispose các controller khi widget bị hủy
     idController.dispose();
+    apartmentNumberController.dispose();
+    dobController.dispose();
+    emailController.dispose();
+    floorController.dispose();
+    fullNameController.dispose();
+    genderController.dispose();
+    phoneController.dispose();
+    statusController.dispose();
+    emergencyContactsController.dispose();
+    householdHeadController.dispose();
     moveInDateController.dispose();
     moveOutDateController.dispose();
-    statusController.dispose();
-    phoneNumberController.dispose();
+    occupationController.dispose();
+    utilitiesController.dispose();
+    vehiclesController.dispose();
     super.dispose();
   }
 
   /// Hàm xử lý khi nhấn nút "Chỉnh sửa" hoặc "Hoàn tất"
-  void toggleEdit() {
+  void toggleEdit() async {
     if (isEditing) {
-      // Kiểm tra dữ liệu trước khi lưu (nếu cần)
-      if (householdHeadController.text.trim().isEmpty ||
-          dobController.text.trim().isEmpty ||
-          occupationController.text.trim().isEmpty ||
-          emailController.text.trim().isEmpty ||
-          apartmentNumberController.text.trim().isEmpty ||
-          floorController.text.trim().isEmpty ||
-          idController.text.trim().isEmpty ||
-          moveInDateController.text.trim().isEmpty ||
-          statusController.text.trim().isEmpty ||
-          selectedUtilities.isEmpty || // Kiểm tra tiện ích
-          phoneNumberController.text.trim().isEmpty) {
+      // Kiểm tra dữ liệu từ 'residents'
+      if (idController.text.trim().isEmpty || apartmentNumberController.text.trim().isEmpty || dobController.text.trim().isEmpty || emailController.text.trim().isEmpty || floorController.text.trim().isEmpty || fullNameController.text.trim().isEmpty || genderController.text.trim().isEmpty || phoneController.text.trim().isEmpty || statusController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin.')),
+          const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin từ người dùng.')),
         );
         return;
       }
@@ -162,71 +298,137 @@ class _ProfilePageState extends State<ProfilePage> {
         return;
       }
 
-      // Kiểm tra định dạng số điện thoại chính
-      if (!_isValidPhoneNumber(phoneNumberController.text.trim())) {
+      // Kiểm tra định dạng số điện thoại
+      if (!_isValidPhoneNumber(phoneController.text.trim())) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Số điện thoại không hợp lệ. Vui lòng nhập lại.')),
         );
         return;
       }
 
-      // Kiểm tra định dạng số điện thoại trong liên hệ khẩn cấp
-      for (var controller in emergencyContactControllers) {
-        if (!_isValidPhoneNumber(controller.text.trim())) {
+      // Kiểm tra định dạng ngày moveInDate và moveOutDate nếu đang chỉnh sửa profile
+      if (profileId != null) {
+        if (moveInDateController.text.trim().isNotEmpty && !_isValidDate(moveInDateController.text.trim())) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Số điện thoại khẩn cấp "${controller.text.trim()}" không hợp lệ. Vui lòng kiểm tra lại.')),
+            const SnackBar(content: Text('Ngày nhập không hợp lệ. Vui lòng nhập lại.')),
+          );
+          return;
+        }
+        if (moveOutDateController.text.trim().isNotEmpty && !_isValidDate(moveOutDateController.text.trim())) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ngày xuất không hợp lệ. Vui lòng nhập lại.')),
           );
           return;
         }
       }
 
-      // Kiểm tra các thành viên
-      for (var member in members) {
-        if (member.relation.trim().isEmpty || member.name.trim().isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin thành viên.')),
-          );
-          return;
-        }
-      }
+      // Prepare dữ liệu từ 'residents' để cập nhật
+      Map<String, dynamic> residentData = {
+        'id': idController.text.trim(),
+        'apartmentNumber': int.tryParse(apartmentNumberController.text.trim()) ?? 0,
+        'dob': dobController.text.trim(),
+        'email': emailController.text.trim(),
+        'floor': int.tryParse(floorController.text.trim()) ?? 0,
+        'fullName': fullNameController.text.trim(),
+        'gender': genderController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'status': statusController.text.trim(),
+      };
 
-      // Kiểm tra các phương tiện
-      for (var vehicle in vehicles) {
-        if (vehicle.type.trim().isEmpty || vehicle.name.trim().isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin phương tiện.')),
-          );
-          return;
-        }
+      // Prepare dữ liệu từ 'profiles' để cập nhật nếu có
+      Map<String, dynamic>? profileData;
+      if (profileId != null) {
+        profileData = {
+          'emergencyContacts': emergencyContactsController.text.trim().isNotEmpty ? emergencyContactsController.text.trim().split(',').map((e) => e.trim()).toList() : [],
+          'householdHead': householdHeadController.text.trim(),
+          'members': _parseMembers(members),
+          'moveInDate': moveInDateController.text.trim(),
+          'moveOutDate': moveOutDateController.text.trim(),
+          'occupation': occupationController.text.trim(),
+          'utilities': selectedUtilities.entries.where((entry) => entry.value).map((entry) => entry.key).toList(),
+          'vehicles': _parseVehicles(vehicles),
+        };
       }
 
       setState(() {
         isEditing = false;
+        isLoading = true;
       });
 
-      // Show AlertDialog instead of Snackbar
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Thành công'),
-            content: const Text('Cập nhật hồ sơ thành công.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Đóng dialog
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
+      try {
+        // Bước 1: Cập nhật dữ liệu từ 'residents'
+        await widget.residentRepository.updateResident(widget.uid, residentData, widget.idToken);
+
+        // Bước 2: Cập nhật hoặc tạo mới dữ liệu từ 'profiles'
+        if (profileId != null) {
+          // Nếu profileId tồn tại, cập nhật profile
+          await widget.residentRepository.updateProfile(profileId!, profileData!, widget.idToken);
+        } else {
+          // Nếu không có profileId, tạo mới profile và cập nhật profileId trong 'residents'
+          await widget.residentRepository.createProfile(widget.uid, profileData!, widget.idToken);
+        }
+
+        // Reload dữ liệu sau khi cập nhật
+        await fetchResidentAndProfileData();
+
+        // Hiển thị thông báo thành công
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Thành công'),
+              content: const Text('Cập nhật hồ sơ thành công.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Đóng dialog
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      } catch (e) {
+        setState(() {
+          isLoading = false;
+        });
+
+        // Hiển thị thông báo lỗi
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Lỗi'),
+              content: Text(e.toString()),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Đóng dialog
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
     } else {
+      // Khi nhấn "Chỉnh sửa", bật chế độ chỉnh sửa
       setState(() {
         isEditing = true;
       });
     }
+  }
+
+  /// Hàm phân tích các phương tiện từ danh sách
+  List<Map<String, String>> _parseVehicles(List<Vehicle> vehiclesList) {
+    return vehiclesList.map((v) => v.toMap()).toList();
+  }
+
+  /// Hàm phân tích các thành viên từ danh sách
+  List<Map<String, String>> _parseMembers(List<Member> membersList) {
+    return membersList.map((m) => m.toMap()).toList();
   }
 
   /// Hàm kiểm tra định dạng ngày
@@ -250,215 +452,132 @@ class _ProfilePageState extends State<ProfilePage> {
     return regex.hasMatch(phone);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Tính toán chiều rộng tối đa của TextField để tránh việc nhãn và dữ liệu bị ngắt dòng
-    double screenWidth = MediaQuery.of(context).size.width;
+  /// Hàm thêm thành viên mới
+  void _addMember() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final TextEditingController relationshipController = TextEditingController();
+        final TextEditingController nameController = TextEditingController();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Hồ sơ nhân khẩu',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          // Hàng 1: Chủ hộ và Nghề nghiệp
-          Row(
+        return AlertDialog(
+          title: const Text('Thêm Thành Viên'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                flex: 2,
-                child: _buildInfoField('Chủ hộ:', householdHeadController, 'householdHead'),
+              TextField(
+                controller: relationshipController,
+                decoration: const InputDecoration(
+                  labelText: 'Quan hệ',
+                ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: _buildInfoField('Nghề nghiệp:', occupationController, 'occupation'),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Tên',
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          // Hàng 2: Ngày sinh, Email, ID
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: _buildInfoField('Ngày sinh:', dobController, 'dob'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: _buildInfoField('Email:', emailController, 'email'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: _buildInfoField('ID (CCCD/Passport):', idController, 'id'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // New Row 3: Số điện thoại
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: _buildInfoField('Số điện thoại:', phoneNumberController, 'phoneNumber'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Hàng 4: Tầng, Số căn hộ, Trạng thái
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: _buildInfoField('Tầng:', floorController, 'floor'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: _buildInfoField('Số căn hộ:', apartmentNumberController, 'apartmentNumber'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 4,
-                child: _buildInfoField('Trạng thái:', statusController, 'status'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Hàng 5: Ngày vào và Ngày ra dự kiến
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: _buildInfoField('Ngày vào:', moveInDateController, 'moveInDate'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: _buildInfoField('Ngày ra dự kiến:', moveOutDateController, 'moveOutDate'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Hàng 6: Thành viên
-          _buildMembersSection(),
-          const SizedBox(height: 10),
-          // Hàng 7: Liên hệ khẩn cấp
-          _buildEmergencyContactsSection(),
-          const SizedBox(height: 10),
-          // Hàng 8: Phương tiện
-          _buildVehiclesSection(),
-          const SizedBox(height: 10),
-          // Hàng 9: Tiện ích (chuyển đổi thành bảng 3x5 selection)
-          _buildUtilitiesSection(),
-          const SizedBox(height: 10),
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: toggleEdit,
-              icon: Icon(isEditing ? Icons.check : Icons.edit),
-              label: Text(isEditing ? 'Hoàn tất' : 'Chỉnh sửa'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                textStyle: const TextStyle(fontSize: 16),
-                backgroundColor: isEditing ? Colors.green : Colors.blueAccent, // Màu nút thay đổi theo trạng thái
-              ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng dialog
+              },
+              child: const Text('Hủy'),
             ),
-          ),
-        ],
-      ),
+            TextButton(
+              onPressed: () {
+                if (relationshipController.text.trim().isNotEmpty && nameController.text.trim().isNotEmpty) {
+                  setState(() {
+                    members.add(Member(
+                      relationship: relationshipController.text.trim(),
+                      name: nameController.text.trim(),
+                    ));
+                  });
+                  Navigator.of(context).pop(); // Đóng dialog
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin thành viên.')),
+                  );
+                }
+              },
+              child: const Text('Thêm'),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  /// Xây dựng phần tiện ích dưới dạng bảng 3x5 với Checkbox và Text
-  Widget _buildUtilitiesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Nhãn thông tin
-        const Text(
-          'Tiện ích:',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
+  /// Hàm thêm phương tiện mới
+  void _addVehicle() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final TextEditingController typeController = TextEditingController();
+        final TextEditingController numberController = TextEditingController();
+
+        return AlertDialog(
+          title: const Text('Thêm Phương Tiện'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: typeController,
+                decoration: const InputDecoration(
+                  labelText: 'Loại xe',
+                ),
+              ),
+              TextField(
+                controller: numberController,
+                decoration: const InputDecoration(
+                  labelText: 'Biển số',
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 8),
-        // Bảng 3x5 của các tiện ích
-        GridView.count(
-          crossAxisCount: 5, // 5 columns
-          mainAxisSpacing: 4.0,
-          crossAxisSpacing: 4.0,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 3, // Adjusted for better appearance
-          children: predefinedUtilities.map((utility) {
-            final bool isSelected = selectedUtilities.contains(utility);
-            return Row(
-              children: [
-                // Checkbox on the left
-                Checkbox(
-                  value: isSelected,
-                  onChanged: isEditing
-                      ? (bool? selected) {
-                          setState(() {
-                            if (selected == true) {
-                              selectedUtilities.add(utility);
-                            } else {
-                              selectedUtilities.remove(utility);
-                            }
-                          });
-                        }
-                      : null,
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                // Text label
-                Expanded(
-                  child: Text(
-                    utility,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                    ),
-                    overflow: TextOverflow.ellipsis, // Prevent overflow
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 8),
-        // Nếu không có tiện ích, hiển thị thông báo
-        if (selectedUtilities.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              'Chưa có tiện ích nào được chọn.',
-              style: TextStyle(color: Colors.grey[600]),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng dialog
+              },
+              child: const Text('Hủy'),
             ),
-          ),
-      ],
+            TextButton(
+              onPressed: () {
+                if (typeController.text.trim().isNotEmpty && numberController.text.trim().isNotEmpty) {
+                  setState(() {
+                    vehicles.add(Vehicle(
+                      type: typeController.text.trim(),
+                      number: numberController.text.trim(),
+                    ));
+                  });
+                  Navigator.of(context).pop(); // Đóng dialog
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin phương tiện.')),
+                  );
+                }
+              },
+              child: const Text('Thêm'),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  /// Xây dựng một trường thông tin với nhãn và TextField hoặc các widget khác
-  Widget _buildInfoField(String label, TextEditingController controller, String fieldName) {
-    // Định nghĩa màu border dựa trên trạng thái chỉnh sửa
-    Color borderColor = isEditing ? Colors.black : Colors.grey;
-
-    // Kiểm tra nếu trường là 'status' thì sử dụng DropdownButtonFormField
+  /// Widget để xây dựng các trường thông tin từ 'residents' và 'id'
+  Widget _buildResidentField(String label, TextEditingController controller, String fieldName, {bool readOnly = false}) {
+    // Kiểm tra nếu trường là 'status', sử dụng Dropdown
     if (fieldName == 'status') {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Nhãn thông tin
           Container(
-            width: 160, // Độ rộng tăng lên để không bị ngắt dòng
+            width: 160, // Độ rộng cố định để các trường thẳng hàng
             padding: const EdgeInsets.only(top: 12.0),
             child: Text(
               label,
@@ -468,51 +587,45 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
-          // DropdownButton dữ liệu
+          // DropdownButtonFormField
           Flexible(
             fit: FlexFit.loose,
             child: DropdownButtonFormField<String>(
-              value: statusController.text.trim(),
+              value: controller.text.trim(),
               items: const [
                 DropdownMenuItem(
-                  value: 'Đang cư trú',
-                  child: Text('Đang cư trú'),
+                  value: 'Đã duyệt',
+                  child: Text('Đã duyệt'),
                 ),
                 DropdownMenuItem(
-                  value: 'Tạm vắng',
-                  child: Text('Tạm vắng'),
-                ),
-                DropdownMenuItem(
-                  value: 'Đã chuyển đi',
-                  child: Text('Đã chuyển đi'),
+                  value: 'Đã rời đi',
+                  child: Text('Đã rời đi'),
                 ),
               ],
               onChanged: isEditing
-                  ? (value) {
+                  ? (String? newValue) {
                       setState(() {
-                        statusController.text = value ?? 'Đang cư trú';
+                        controller.text = newValue ?? 'Đã duyệt';
                       });
                     }
                   : null,
               decoration: InputDecoration(
-                labelText: 'Trạng thái',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
+                  borderSide: BorderSide(color: (!isEditing) ? Colors.grey : Colors.black),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
+                  borderSide: BorderSide(color: (!isEditing) ? Colors.grey : Colors.black),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey, width: 2),
+                  borderSide: BorderSide(color: (!isEditing) ? Colors.grey : Colors.black, width: 2),
                 ),
-                // Add disabledBorder to ensure gray border when not editing
-                disabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
+              ),
+              disabledHint: Text(
+                controller.text.trim(),
+                style: const TextStyle(color: Colors.grey),
               ),
             ),
           ),
@@ -520,14 +633,85 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
 
+    // Các trường thông tin khác
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Nhãn thông tin
+        Container(
+          width: 160, // Độ rộng cố định để các trường thẳng hàng
+          padding: const EdgeInsets.only(top: 12.0),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        // TextField dữ liệu
+        Flexible(
+          fit: FlexFit.loose,
+          child: TextField(
+            controller: controller,
+            readOnly: !isEditing || readOnly, // Vô hiệu hóa khi không chỉnh sửa hoặc nếu là readOnly
+            style: TextStyle(
+              color: (!isEditing || readOnly) ? Colors.grey : Colors.black, // Màu chữ thay đổi theo trạng thái
+            ),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: (!isEditing || readOnly) ? Colors.grey : Colors.black),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: (!isEditing || readOnly) ? Colors.grey : Colors.black),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: (!isEditing || readOnly) ? Colors.grey : Colors.black, width: 2),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Widget để xây dựng các trường thông tin từ 'profiles' cho thành viên
+  Widget _buildMemberField(String label, TextEditingController controller, Function(String) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        TextField(
+          controller: controller,
+          enabled: isEditing,
+          onChanged: onChanged,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Widget để xây dựng các trường thông tin từ 'profiles'
+  Widget _buildProfileField(String label, TextEditingController controller, String fieldName, {bool readOnly = false}) {
     // Kiểm tra nếu trường là ngày, sử dụng DatePicker
-    if (fieldName == 'dob' || fieldName == 'moveInDate' || fieldName == 'moveOutDate') {
+    if (fieldName == 'moveInDate' || fieldName == 'moveOutDate') {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Nhãn thông tin
           Container(
-            width: 160, // Độ rộng tăng lên để không bị ngắt dòng
+            width: 160,
             padding: const EdgeInsets.only(top: 12.0),
             child: Text(
               label,
@@ -541,7 +725,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Flexible(
             fit: FlexFit.loose,
             child: GestureDetector(
-              onTap: isEditing
+              onTap: isEditing && !readOnly
                   ? () async {
                       DateTime initialDate = _isValidDate(controller.text.trim()) ? _convertStringToDate(controller.text.trim()) : DateTime.now();
                       DateTime? pickedDate = await showDatePicker(
@@ -562,24 +746,24 @@ class _ProfilePageState extends State<ProfilePage> {
                   controller: controller,
                   readOnly: true, // Vô hiệu hóa khi không chỉnh sửa
                   style: TextStyle(
-                    color: isEditing ? Colors.black : Colors.grey, // Màu chữ thay đổi theo trạng thái
+                    color: isEditing && !readOnly ? Colors.black : Colors.grey, // Màu chữ thay đổi theo trạng thái
                   ),
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: borderColor),
+                      borderSide: BorderSide(color: isEditing && !readOnly ? Colors.black : Colors.grey),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: borderColor),
+                      borderSide: BorderSide(color: isEditing && !readOnly ? Colors.black : Colors.grey),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: borderColor, width: 2),
+                      borderSide: BorderSide(color: isEditing && !readOnly ? Colors.black : Colors.grey, width: 2),
                     ),
                     isDense: true, // Giảm kích thước của TextField
                     contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                    suffixIcon: isEditing ? const Icon(Icons.calendar_today) : null, // Hiển thị biểu tượng lịch nếu đang chỉnh sửa
+                    suffixIcon: isEditing && !readOnly ? const Icon(Icons.calendar_today) : null, // Hiển thị biểu tượng lịch nếu đang chỉnh sửa
                   ),
                 ),
               ),
@@ -595,7 +779,7 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         // Nhãn thông tin
         Container(
-          width: 160, // Độ rộng tăng lên để không bị ngắt dòng
+          width: 160, // Độ rộng cố định để các trường thẳng hàng
           padding: const EdgeInsets.only(top: 12.0),
           child: Text(
             label,
@@ -610,332 +794,26 @@ class _ProfilePageState extends State<ProfilePage> {
           fit: FlexFit.loose,
           child: TextField(
             controller: controller,
-            readOnly: !isEditing, // Vô hiệu hóa khi không chỉnh sửa
+            readOnly: !isEditing || readOnly, // Vô hiệu hóa khi không chỉnh sửa hoặc nếu là readOnly
             style: TextStyle(
-              color: isEditing ? Colors.black : Colors.grey, // Màu chữ thay đổi theo trạng thái
+              color: (!isEditing || readOnly) ? Colors.grey : Colors.black, // Màu chữ thay đổi theo trạng thái
             ),
-            maxLines: fieldName == 'utilities' || fieldName == 'phoneNumber' ? null : 1, // Cho phép nhiều dòng cho các trường phức tạp
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: borderColor),
+                borderSide: BorderSide(color: (!isEditing || readOnly) ? Colors.grey : Colors.black),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: borderColor),
+                borderSide: BorderSide(color: (!isEditing || readOnly) ? Colors.grey : Colors.black),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: borderColor, width: 2),
+                borderSide: BorderSide(color: (!isEditing || readOnly) ? Colors.grey : Colors.black, width: 2),
               ),
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  /// Xây dựng phần thành viên
-  Widget _buildMembersSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Thành viên:',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-        ),
-        const SizedBox(height: 8),
-        Column(
-          children: members
-              .asMap()
-              .entries
-              .map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          controller: members[entry.key].relationController,
-                          enabled: isEditing,
-                          decoration: InputDecoration(
-                            labelText: 'Quan hệ',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey, width: 2),
-                            ),
-                          ),
-                          onChanged: (value) {
-                            members[entry.key].relation = value;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          controller: members[entry.key].nameController,
-                          enabled: isEditing,
-                          decoration: InputDecoration(
-                            labelText: 'Tên',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey, width: 2),
-                            ),
-                          ),
-                          onChanged: (value) {
-                            members[entry.key].name = value;
-                          },
-                        ),
-                      ),
-                      if (isEditing)
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            setState(() {
-                              members[entry.key].dispose();
-                              members.removeAt(entry.key);
-                            });
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        if (isEditing)
-          TextButton.icon(
-            onPressed: () {
-              setState(() {
-                members.add(Member());
-              });
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Thêm thành viên'),
-          ),
-      ],
-    );
-  }
-
-  /// Xây dựng phần liên hệ khẩn cấp
-  Widget _buildEmergencyContactsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Liên hệ khẩn cấp:',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-        ),
-        const SizedBox(height: 8),
-        Column(
-          children: emergencyContactControllers
-              .asMap()
-              .entries
-              .map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: emergencyContactControllers[entry.key],
-                          enabled: isEditing,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey, width: 2),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (isEditing)
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            setState(() {
-                              emergencyContactControllers[entry.key].dispose();
-                              emergencyContactControllers.removeAt(entry.key);
-                            });
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        if (isEditing)
-          TextButton.icon(
-            onPressed: () {
-              setState(() {
-                emergencyContactControllers.add(TextEditingController());
-              });
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Thêm liên hệ khẩn cấp'),
-          ),
-      ],
-    );
-  }
-
-  /// Xây dựng phần phương tiện
-  Widget _buildVehiclesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Phương tiện:',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-        ),
-        const SizedBox(height: 8),
-        Column(
-          children: vehicles
-              .asMap()
-              .entries
-              .map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<String>(
-                          value: vehicles[entry.key].type,
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'Ô tô',
-                              child: Text('Ô tô'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'Xe máy',
-                              child: Text('Xe máy'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'Xe đạp',
-                              child: Text('Xe đạp'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'Xe máy điện',
-                              child: Text('Xe máy điện'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'Xe đạp điện',
-                              child: Text('Xe đạp điện'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'Ngựa',
-                              child: Text('Ngựa'),
-                            ),
-                            // Thêm các loại phương tiện khác nếu cần
-                          ],
-                          onChanged: isEditing
-                              ? (value) {
-                                  setState(() {
-                                    vehicles[entry.key].type = value ?? 'Ô tô';
-                                  });
-                                }
-                              : null,
-                          decoration: InputDecoration(
-                            labelText: 'Loại phương tiện',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey, width: 2),
-                            ),
-                            // Add disabledBorder to ensure gray border when not editing
-                            disabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          controller: vehicles[entry.key].nameController,
-                          enabled: isEditing,
-                          decoration: InputDecoration(
-                            labelText: 'Tên',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: isEditing ? Colors.black : Colors.grey, width: 2),
-                            ),
-                          ),
-                          onChanged: (value) {
-                            vehicles[entry.key].name = value;
-                          },
-                        ),
-                      ),
-                      if (isEditing)
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            setState(() {
-                              vehicles[entry.key].dispose();
-                              vehicles.removeAt(entry.key);
-                            });
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        if (isEditing)
-          TextButton.icon(
-            onPressed: () {
-              setState(() {
-                vehicles.add(Vehicle());
-              });
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Thêm phương tiện'),
-          ),
       ],
     );
   }
@@ -953,5 +831,299 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       return DateTime.now();
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Hiển thị loading hoặc error nếu cần
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Hồ Sơ Nhân Khẩu'),
+        ),
+        body: Center(
+          child: Text(
+            errorMessage!,
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Hồ Sơ Nhân Khẩu'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Phần "Thông tin người dùng"
+            const Text(
+              'Thông Tin Người Dùng',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            // Dòng ID
+            _buildResidentField('ID:', idController, 'id', readOnly: true),
+            const SizedBox(height: 10),
+            // Hàng: Họ và tên, Ngày sinh, Giới tính
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: _buildResidentField('Họ và tên:', fullNameController, 'fullName'),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _buildResidentField('Ngày sinh:', dobController, 'dob'),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _buildResidentField('Giới tính:', genderController, 'gender'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Hàng: Email, Số điện thoại
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: _buildResidentField('Email:', emailController, 'email'),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _buildResidentField('Số điện thoại:', phoneController, 'phone'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Hàng: Tầng, Số căn hộ, Trạng thái
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildResidentField('Tầng:', floorController, 'floor'),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _buildResidentField('Số căn hộ:', apartmentNumberController, 'apartmentNumber'),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 3,
+                  child: _buildResidentField('Trạng thái:', statusController, 'status'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Phần "Thông tin chi tiết" luôn được hiển thị
+            const Text(
+              'Thông Tin Chi Tiết',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            // Liên hệ khẩn cấp
+            _buildProfileField('Liên hệ khẩn cấp:', emergencyContactsController, 'emergencyContacts'),
+            const SizedBox(height: 10),
+            // Chủ hộ
+            _buildProfileField('Chủ hộ:', householdHeadController, 'householdHead'),
+            const SizedBox(height: 10),
+            // Thành viên
+            const Text(
+              'Thành viên:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            ...members.map((member) {
+              // Tạo controller cho mỗi thành viên để quản lý thay đổi
+              final relationshipController = TextEditingController(text: member.relationship);
+              final nameController = TextEditingController(text: member.name);
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  children: [
+                    // Quan hệ
+                    Expanded(
+                      flex: 2,
+                      child: _buildMemberField(
+                        'Quan hệ:',
+                        relationshipController,
+                        (value) {
+                          setState(() {
+                            member.relationship = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Tên
+                    Expanded(
+                      flex: 3,
+                      child: _buildMemberField(
+                        'Tên:',
+                        nameController,
+                        (value) {
+                          setState(() {
+                            member.name = value;
+                          });
+                        },
+                      ),
+                    ),
+                    if (isEditing)
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            members.remove(member);
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              );
+            }).toList(),
+            if (isEditing)
+              ElevatedButton.icon(
+                onPressed: () {
+                  _addMember();
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Thêm Thành Viên'),
+              ),
+            const SizedBox(height: 10),
+            // Ngày nhập, Ngày xuất
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: _buildProfileField('Ngày nhập:', moveInDateController, 'moveInDate'),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 3,
+                  child: _buildProfileField('Ngày xuất:', moveOutDateController, 'moveOutDate'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Nghề nghiệp
+            _buildProfileField('Nghề nghiệp:', occupationController, 'occupation'),
+            const SizedBox(height: 10),
+            // Tiện ích dưới dạng checkbox
+            const Text(
+              'Tiện ích:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            Wrap(
+              spacing: 10.0,
+              children: availableUtilities.map((utility) {
+                return FilterChip(
+                  label: Text(utility),
+                  selected: selectedUtilities[utility] ?? false,
+                  onSelected: isEditing
+                      ? (bool selected) {
+                          setState(() {
+                            selectedUtilities[utility] = selected;
+                          });
+                        }
+                      : null,
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 10),
+            // Phương tiện
+            const Text(
+              'Phương tiện:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            ...vehicles.map((vehicle) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  children: [
+                    // Loại xe
+                    Expanded(
+                      flex: 2,
+                      child: _buildProfileField(
+                        'Loại xe:',
+                        TextEditingController(text: vehicle.type),
+                        'vehicleType',
+                        readOnly: true,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Biển số
+                    Expanded(
+                      flex: 3,
+                      child: _buildProfileField(
+                        'Biển số:',
+                        TextEditingController(text: vehicle.number),
+                        'vehicleNumber',
+                        readOnly: true,
+                      ),
+                    ),
+                    if (isEditing)
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            vehicles.remove(vehicle);
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              );
+            }).toList(),
+            if (isEditing)
+              ElevatedButton.icon(
+                onPressed: () {
+                  _addVehicle();
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Thêm Phương Tiện'),
+              ),
+            const SizedBox(height: 20),
+
+            // Nút Chỉnh Sửa/Hoàn Tất
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: toggleEdit,
+                icon: Icon(isEditing ? Icons.check : Icons.edit),
+                label: Text(isEditing ? 'Hoàn tất' : 'Chỉnh sửa'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  textStyle: const TextStyle(fontSize: 16),
+                  backgroundColor: isEditing ? Colors.green : Colors.blueAccent, // Màu nút thay đổi theo trạng thái
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
