@@ -9,8 +9,7 @@ import 'events_page.dart';
 import 'fees_page.dart';
 import 'users_page.dart';
 import 'complaints_page.dart';
-import 'fees_page.dart';
-import 'widgets/weather.dart'; // Updated import
+import 'admin_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   final AuthenticationService authService;
@@ -71,7 +70,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   void initState() {
     super.initState();
     _pages = [
-      const EmptyPage(), // 0: Trang chủ trống
+      const AdminPage(), // 0: Trang chủ trống
       const DashboardPage(), // 1: Bảng điều khiển
       UsersPage(
         authService: widget.authService,
@@ -340,31 +339,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
           );
         }
       },
-    );
-  }
-}
-
-/// Widget for Empty Home Page
-class EmptyPage extends StatelessWidget {
-  const EmptyPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: const [
-            SizedBox(height: 20),
-            WeatherApiWidget(location: 'Hanoi'), // Updated widget
-            SizedBox(height: 20),
-            Text(
-              'Trang chủ đang được phát triển...',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
