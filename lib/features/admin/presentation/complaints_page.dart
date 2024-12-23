@@ -17,6 +17,8 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
   List<Complaint> complaints = [];
   late List<Complaint> deletedComplaints;
   late List<Complaint> allComplaints;
+  late final String? idToken;
+  late final String? uid;
   late final ComplaintsRepository complaintsRepository;
   late final AuthenticationService authService;
   bool _isLoading = true;
@@ -37,6 +39,11 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
     setState(() {
       chosenList.remove(complaint);
     });
+  }
+
+    Future<void> getUidAndIdtoken() async {
+    idToken = await authService.getIdToken();
+    uid = await authService.getUserUid(idToken!);
   }
 
   void toggleSelectAllButton() {
@@ -67,9 +74,9 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
       apiKey: authService.apiKey,
       projectId: authService.projectId,
     );
+    getUidAndIdtoken();
     _fetchComplaints();
 
-    deletedComplaints = [];
   }
 
   @override
@@ -184,6 +191,28 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
 
     // Trả về chuỗi đã tách thành các dòng
     return resultLines.join('\n');
+  }
+
+  Future<void> _deleteComplaint(Complaint complaint) async {
+    try {
+      if (idToken == null) {
+        throw Exception('User not authenticated');
+      }
+      complaintsRepository.deleteComplaint(complaint.id, idToken!);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error delete complaint: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        complaints = complaints.where((x) => x.id != complaint.id).toList();
+      });
+    }
   }
 
   void _addComment(Complaint complaint) {
@@ -304,15 +333,32 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 if (chosenList.isNotEmpty)
-                                  IconButton(
-                                    tooltip: 'Mark as unread',
-                                    icon: const Icon(
-                                        FluentIcons.mail_20_regular,
-                                        color:
-                                            Color.fromARGB(255, 59, 111, 163)),
-                                    onPressed: () {
-                                      markAsUnread();
-                                    },
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                              onPressed: () {
+                                                for (var x in chosenList) {
+                                                  _deleteComplaint(x);
+                                                }
+                                                chosenList = [];
+                                                setState(() {});
+                                              },
+                                              icon: const Icon(
+                                                  FluentIcons.delete_20_regular,
+                                                  size: 20,
+                                                  color: Color.fromARGB(
+                                                      255, 59, 111, 163))),
+                                      IconButton(
+                                        tooltip: 'Mark as unread',
+                                        icon: const Icon(
+                                            FluentIcons.mail_20_regular,
+                                            color:
+                                                Color.fromARGB(255, 59, 111, 163)),
+                                        onPressed: () {
+                                          markAsUnread();
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 PopupMenuButton<String>(
                                   tooltip: 'Filter',
@@ -591,7 +637,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                         toggleStar(complaint);
                       }),
                 Text(
-                  complaint.date, // Hiển thị ngày tháng ở đây
+                  complaint.date.substring(0,10), // Hiển thị ngày tháng ở đây
                   style: complaint.status == 'Mới'
                       ? const TextStyle(
                           fontSize: 13,
@@ -706,7 +752,17 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                       ),
                       title: Text(complaint.senter,
                           style: const TextStyle(fontSize: 16)),
-                      subtitle: const Text('Tới: (Tên admin ở đây)'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Tới: Quản lý',style: TextStyle(fontSize: 13),),
+                          Text(selectedComplaint==null?'': selectedComplaint!.date.substring(11),
+                            style: TextStyle(color: const Color.fromARGB(255, 75, 75, 133)
+                                        .withOpacity(0.8),
+                                        fontStyle: FontStyle.italic),
+                            ),
+                        ],
+                      ),
                       dense: true,
                       trailing: IconButton(
                           icon: const Icon(FluentIcons.arrow_reply_16_regular),
@@ -868,11 +924,6 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                     StatisticCard(
                       label: 'Tổng số khiếu nại',
                       count: getTotalComplaints(),
-                      color: Colors.black,
-                    ),
-                    StatisticCard(
-                      label: 'Khiếu nại đã xử lý xong',
-                      count: getDoneComplaints(),
                       color: Colors.black,
                     ),
                     StatisticCard(

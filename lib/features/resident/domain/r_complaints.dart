@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+Map<String, Color> bgGen = {};
 class Complaint {
   final String uid;
   final String senter;
@@ -22,17 +23,15 @@ class Complaint {
     required this.date,
     required this.id,
     required this.isFlagged,
-    
     this.chosen = false,
     required this.bgColor,
     this.status = 'Mới',
     List<Map<String, dynamic>>? comments,
-  }): comments = comments ?? [];
+  }) : comments = comments ?? [];
   @override
   String toString() {
     return 'Complaint(uid: $uid)';
   }
-
   /// Factory method để tạo Event từ tài liệu Firestore
   factory Complaint.fromFirestore(
       Map<String, dynamic> data, String documentId) {
@@ -47,49 +46,61 @@ class Complaint {
       ];
       List<Map<String, dynamic>> parsedComments = [];
       if (data['comments']?['arrayValue']?['values'] != null) {
-         parsedComments =
-            (data['comments']['arrayValue']['values'] as List)
-                .map((commentData) {
+        parsedComments = (data['comments']['arrayValue']['values'] as List)
+            .map((commentData) {
           final mapData = commentData['mapValue']['fields'];
           return {
             'user': mapData['user']?['stringValue'] ?? '',
             'content': mapData['content']?['stringValue'] ?? '',
           };
-        }).toList(); 
+        }).toList();
+      }
+
+      
+      Color generateBgColor(String uid) {
+        if(uid==''){
+          return Colors.red;
+        }
+        if (bgGen.containsKey(uid)) {
+          return bgGen[uid]!;
+        }
+        // Nếu chưa có, tạo màu mới và lưu vào bgGen
+        final randomColor = colorPalette[Random().nextInt(colorPalette.length)];
+        bgGen[uid] = randomColor;
+        return randomColor;
       }
 
       return Complaint(
         id: documentId,
-        uid:data['uid']?['stringValue'] ?? '',
+        uid: data['uid']?['stringValue'] ?? '',
         senter: data['senter']?['stringValue'] ?? '',
         title: data['title']?['stringValue'] ?? '',
         description:
             data['description']?['stringValue'].replaceAll(r'\n', '\n') ?? '',
         isFlagged: data['isFlagged']?['booleanValue'] ?? false,
         status: data['status']?['stringValue'] ?? 'Mới',
-        bgColor: colorPalette[Random().nextInt(colorPalette.length)],
+        bgColor: generateBgColor(data['uid']?['stringValue'] ?? ''),
         date: data['date']?['stringValue'] ?? '',
         comments: parsedComments,
       );
     } catch (e) {
       return Complaint(
-        id: documentId,
-        uid:'',
-        senter: '',
-        title: 'Error',
-        description: '',
-        isFlagged: false,
-        status: 'Mới',
-        bgColor: Colors.red,
-        date: '',
-        comments: []
-      );
+          id: documentId,
+          uid: '',
+          senter: '',
+          title: 'Error',
+          description: '',
+          isFlagged: false,
+          status: 'Mới',
+          bgColor: Colors.red,
+          date: '',
+          comments: []);
     }
   }
 
   Map<String, dynamic> toFirestore() {
     return {
-      'uid' : {'stringValue':uid},
+      'uid': {'stringValue': uid},
       'title': {'stringValue': title},
       'senter': {'stringValue': senter},
       'description': {'stringValue': description},

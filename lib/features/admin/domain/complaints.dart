@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-
+Map<String, Color> bgGen = {};
 class Complaint {
   final String uid;
   final String senter;
@@ -56,7 +56,18 @@ class Complaint {
           };
         }).toList(); 
       }
-
+      Color generateBgColor(String uid) {
+        if(uid==''){
+          return Colors.red;
+        }
+        if (bgGen.containsKey(uid)) {
+          return bgGen[uid]!;
+        }
+        // Nếu chưa có, tạo màu mới và lưu vào bgGen
+        final randomColor = colorPalette[Random().nextInt(colorPalette.length)];
+        bgGen[uid] = randomColor;
+        return randomColor;
+      }
       return Complaint(
         id: documentId,
         uid:data['uid']?['stringValue'] ?? '',
@@ -66,7 +77,7 @@ class Complaint {
             data['description']?['stringValue'].replaceAll(r'\n', '\n') ?? '',
         isFlagged: data['isFlagged']?['booleanValue'] ?? false,
         status: data['status']?['stringValue'] ?? 'Mới',
-        bgColor: colorPalette[Random().nextInt(colorPalette.length)],
+        bgColor: generateBgColor(data['uid']?['stringValue'] ?? ''),
         date: data['date']?['stringValue'] ?? '',
         comments: parsedComments,
       );

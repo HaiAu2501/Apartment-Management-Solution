@@ -71,11 +71,21 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
     setState(() {});
   }
 
+  void sortComplaintsByDate({bool descending = true}) {
+  complaints.sort((a, b) {
+    if (descending) {
+      return b.date.compareTo(a.date); // Mới nhất trước
+    } else {
+      return a.date.compareTo(b.date); // Cũ nhất trước
+    }
+  });
+}
+
+
   void showAddComplaintWidget(BuildContext context) {
     String convertTime() {
       DateTime now = DateTime.now();
-      String formattedDate = DateFormat('yyyy-MM-dd').format(now);
-      print(formattedDate);
+      String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(now);
       return formattedDate;
     }
 
@@ -110,7 +120,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                           borderRadius: BorderRadius.circular(4), // Bo góc viền
                         ),
                         padding: const EdgeInsets.fromLTRB(16,6,16,6),
-                        child: Text('Fr')),
+                        child: const Text('Fr')),
                         const SizedBox(width: 8,),
                     Expanded(
                       child: TextField(
@@ -131,9 +141,9 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                           borderRadius: BorderRadius.circular(4), // Bo góc viền
                         ),
                         padding: const EdgeInsets.fromLTRB(16,6,16,6),
-                        child: Text('To')),
+                        child: const Text('To')),
                         const SizedBox(width: 8,),
-                    Expanded(
+                    const Expanded(
                       child: TextField(
                         readOnly: true,
                         decoration: InputDecoration(labelText: 'admin'),
@@ -201,7 +211,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                     date: convertTime(),
                     id: '123',
                     isFlagged: false,
-                    bgColor: Colors.lightGreen);
+                    bgColor:complaints==[]?Colors.green: complaints[0].bgColor);
                 _addComplaint(complaintData, newComplaint);
                 Navigator.pop(context); // Thực hiện logic, rồi đóng dialog
               },
@@ -223,6 +233,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
     );
     getUidAndIdtoken();
     _fetchComplaints();
+
   }
 
   @override
@@ -255,6 +266,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
         setState(() {
           allComplaints = complaintsFetched;
           complaints = allComplaints.where((x) => x.uid == usid!).toList();
+          sortComplaintsByDate();
           _isLoading = false;
         });
       }
@@ -302,7 +314,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
           complaintData, idToken!, newComplaint);
       print(newComplaint.id);
       setState(() {
-        complaints.add(newComplaint);
+        complaints.insert(0,newComplaint);
       });
     } catch (e) {
       if (mounted) {
@@ -657,6 +669,12 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
       });
     }
 
+    String getDate(String time){
+      return time.substring(0,10);
+    }
+
+    
+
     return Container(
       padding: const EdgeInsets.fromLTRB(0, 0, 5, 0),
       decoration: BoxDecoration(
@@ -785,7 +803,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                         toggleStar(complaint);
                       }),
                 Text(
-                  complaint.date, // Hiển thị ngày tháng ở đây
+                  getDate(complaint.date), // Hiển thị ngày tháng ở đây
                   style: complaint.status == 'Mới'
                       ? const TextStyle(
                           fontSize: 13,
@@ -846,8 +864,6 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
         complaints.where((c) => c.status == 'Mới').length;
     int getSolvingComplaints() =>
         complaints.where((c) => c.status == 'Đang xử lý').length;
-    int getDoneComplaints() =>
-        complaints.where((c) => c.status == 'Đã hoàn thành').length;
 
     if (complaint != null) {
       return Container(
@@ -899,18 +915,31 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                         child: Text(getAvatarName(complaint.senter)),
                       ),
                       title: Text(complaint.senter,
-                          style: const TextStyle(fontSize: 16)),
-                      subtitle: const Text('Tới: (Tên admin ở đây)'),
+                          style: const TextStyle(fontSize: 16,fontWeight: FontWeight.w500)),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Tới: Quản lý',style: TextStyle(fontSize: 13),),
+                          Text(selectedComplaint==null?'': selectedComplaint!.date.substring(11),
+                            style: TextStyle(color: const Color.fromARGB(255, 75, 75, 133)
+                                        .withOpacity(0.8),
+                                        fontStyle: FontStyle.italic),
+                            ),
+                        ],
+                      ),
                       dense: true,
-                      trailing: IconButton(
-                          icon: const Icon(FluentIcons.arrow_reply_16_regular),
-                          onPressed: () {
-                            setState(() {
-                              selectedComplaint = null;
-                            });
-                          }),
+                      trailing: 
+                          IconButton(
+                              icon: const Icon(FluentIcons.arrow_reply_16_regular),
+                              onPressed: () {
+                                setState(() {
+                                  selectedComplaint = null;
+                                });
+                              }),
+                              
+                      
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(15, 5, 5, 25),
                       child: Text(
@@ -920,13 +949,18 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                         ),
                       ),
                     ),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        
                         ElevatedButton.icon(
                             label: Text('Reply',
                                 style: TextStyle(
                                     color: const Color.fromARGB(255, 90, 90, 92)
-                                        .withOpacity(0.8))),
+                                        .withOpacity(0.8),
+                                        
+                                        )
+                                        ),
                             onPressed: () {
                               setState(() {
                                 if (!showInputField) {
@@ -956,6 +990,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                               ),
                             )),
                         const SizedBox(width: 10),
+                        
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -1064,11 +1099,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                       count: getTotalComplaints(),
                       color: Colors.black,
                     ),
-                    StatisticCard(
-                      label: 'Khiếu nại đã xử lý xong',
-                      count: getDoneComplaints(),
-                      color: Colors.black,
-                    ),
+                   
                     StatisticCard(
                       label: 'Khiếu nại chưa đọc',
                       count: getUnreadComplaints(),
