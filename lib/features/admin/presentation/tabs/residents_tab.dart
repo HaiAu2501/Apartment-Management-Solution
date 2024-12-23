@@ -35,6 +35,13 @@ class _ResidentsTabState extends State<ResidentsTab> {
   // Selected room info
   Map<String, dynamic>? selectedRoomInfo;
 
+  // Variables for profile information
+  Map<String, dynamic>? selectedProfileInfo;
+  bool isLoadingProfile = false;
+
+  // Biến để kiểm soát việc hiển thị thông tin Profile
+  bool isProfileVisible = false;
+
   @override
   void initState() {
     super.initState();
@@ -326,8 +333,10 @@ class _ResidentsTabState extends State<ResidentsTab> {
           onSelected: (int floor) {
             setState(() {
               selectedFloor = floor;
-              // Reset selected room info when floor changes
+              // Reset selected room info and profile info when floor changes
               selectedRoomInfo = null;
+              selectedProfileInfo = null;
+              isProfileVisible = false;
             });
           },
           itemBuilder: (BuildContext context) => List<PopupMenuEntry<int>>.generate(
@@ -395,11 +404,10 @@ class _ResidentsTabState extends State<ResidentsTab> {
             },
           ),
         ),
-        const SizedBox(height: 10),
         // Display selected room info
         if (selectedRoomInfo != null)
-          Expanded(
-            flex: 5,
+          Flexible(
+            flex: 10,
             child: SingleChildScrollView(
               child: buildResidentInfoCard(selectedRoomInfo!),
             ),
@@ -429,11 +437,15 @@ class _ResidentsTabState extends State<ResidentsTab> {
       if (fields != null) {
         setState(() {
           selectedRoomInfo = Map<String, dynamic>.from(fields);
+          selectedProfileInfo = null; // Reset profile info when selecting a new resident
+          isProfileVisible = false; // Ẩn Profile khi chọn cư dân mới
           print('Selected Resident Info: $selectedRoomInfo');
         });
       } else {
         setState(() {
           selectedRoomInfo = null;
+          selectedProfileInfo = null;
+          isProfileVisible = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Không tìm thấy dữ liệu cư dân.')),
@@ -443,6 +455,8 @@ class _ResidentsTabState extends State<ResidentsTab> {
       // Handle when no resident is found in the room
       setState(() {
         selectedRoomInfo = null;
+        selectedProfileInfo = null;
+        isProfileVisible = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Không tìm thấy cư dân trong căn hộ này.')),
@@ -450,8 +464,9 @@ class _ResidentsTabState extends State<ResidentsTab> {
     }
   }
 
-  // Build resident info card
+  // Build resident info card with "Thêm thông tin" button
   Widget buildResidentInfoCard(Map<String, dynamic> info) {
+    String profileId = _getStringValue(info, 'profileId');
     return Card(
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -460,24 +475,155 @@ class _ResidentsTabState extends State<ResidentsTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Thông tin căn hộ ${_getIntegerValue(info, 'apartmentNumber')}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            // Phần trên: Nút "Thêm thông tin" hoặc "Ẩn thông tin"
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (!isProfileVisible) {
+                        // Nếu Profile chưa được hiển thị, fetch dữ liệu
+                        fetchProfile(profileId);
+                      } else {
+                        // Nếu Profile đang hiển thị, ẩn đi
+                        selectedProfileInfo = null;
+                      }
+                      isProfileVisible = !isProfileVisible;
+                    });
+                  },
+                  child: Text(isProfileVisible ? 'Ẩn thông tin' : 'Thêm thông tin'),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            Text('Họ và Tên: ${_getStringValue(info, 'fullName')}'),
-            Text('Giới tính: ${_getStringValue(info, 'gender')}'),
-            Text('Ngày sinh: ${_getStringValue(info, 'dob').isNotEmpty ? formatDob(_getStringValue(info, 'dob')) : ''}'),
-            Text('Số điện thoại: ${_getStringValue(info, 'phone')}'),
-            Text('Số ID: ${_getStringValue(info, 'id')}'),
-            Text('Email: ${_getStringValue(info, 'email')}'),
-            Text('Tầng: ${_getIntegerValue(info, 'floor')}'),
-            Text('Căn hộ số: ${_getIntegerValue(info, 'apartmentNumber')}'),
-            Text('Trạng thái: ${_getStringValue(info, 'status')}'),
+            // Phần dưới: Chia thành hai cột bên trái và bên phải
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Bên trái: Thông tin căn hộ
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Thêm lề phía trên tiêu đề "Thông tin căn hộ"
+                      Padding(
+                        padding: const EdgeInsets.only(top: 25.0),
+                        child: Text(
+                          'Thông tin căn hộ ${_getIntegerValue(info, 'apartmentNumber')}',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // Thông tin căn hộ
+                      Text('Họ và Tên: ${_getStringValue(info, 'fullName')}'),
+                      Text('Giới tính: ${_getStringValue(info, 'gender')}'),
+                      Text('Ngày sinh: ${_getStringValue(info, 'dob').isNotEmpty ? formatDob(_getStringValue(info, 'dob')) : ''}'),
+                      Text('Số điện thoại: ${_getStringValue(info, 'phone')}'),
+                      Text('Số ID: ${_getStringValue(info, 'id')}'),
+                      Text('Email: ${_getStringValue(info, 'email')}'),
+                      Text('Tầng: ${_getIntegerValue(info, 'floor')}'),
+                      Text('Căn hộ số: ${_getIntegerValue(info, 'apartmentNumber')}'),
+                      Text('Trạng thái: ${_getStringValue(info, 'status')}'),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20), // Khoảng cách giữa hai cột
+                // Bên phải: Thông tin Profile (hiển thị khi isProfileVisible == true)
+                if (isProfileVisible)
+                  Expanded(
+                    flex: 1,
+                    child: selectedProfileInfo != null ? buildProfileInfoCard(selectedProfileInfo!) : const Center(child: CircularProgressIndicator()),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  // Build profile info card
+  Widget buildProfileInfoCard(Map<String, dynamic> profileInfo) {
+    // Decode profileInfo theo các kiểu dữ liệu của Firestore
+    String householdHead = _getStringValue(profileInfo, 'householdHead');
+    String occupation = _getStringValue(profileInfo, 'occupation');
+    List<String> emergencyContacts = _getArrayStringValue(profileInfo, 'emergencyContacts');
+    List<Map<String, dynamic>> members = _getArrayMapValue(profileInfo, 'members');
+    String moveInDate = _getStringValue(profileInfo, 'moveInDate');
+    String moveOutDate = _getStringValue(profileInfo, 'moveOutDate');
+    List<String> utilities = _getArrayStringValue(profileInfo, 'utilities');
+    List<Map<String, dynamic>> vehicles = _getArrayMapValue(profileInfo, 'vehicles');
+
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.only(top: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Thông tin gia đình',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 1),
+            Text('Chủ nhà: $householdHead'),
+            Text('Nghề nghiệp: $occupation'),
+            const SizedBox(height: 1),
+            Text('Liên lạc khẩn cấp:'),
+            ...emergencyContacts.map((contact) => Text('- $contact')).toList(),
+            const SizedBox(height: 1),
+            Text('Thành viên:'),
+            ...members.map((member) {
+              String name = _getStringValue(member, 'name');
+              String relationship = _getStringValue(member, 'relationship');
+              return Text('- $name ($relationship)');
+            }).toList(),
+            const SizedBox(height: 1),
+            Text('Ngày vào: $moveInDate'),
+            Text('Ngày ra: $moveOutDate'),
+            const SizedBox(height: 1),
+            Text('Tiện ích:'),
+            ...utilities.map((utility) => Text('- $utility')).toList(),
+            const SizedBox(height: 1),
+            Text('Phương tiện:'),
+            ...vehicles.map((vehicle) {
+              String type = _getStringValue(vehicle, 'type');
+              String number = _getStringValue(vehicle, 'number');
+              return Text('- $type: $number');
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Fetch profile information from Firestore
+  Future<void> fetchProfile(String profileId) async {
+    setState(() {
+      isLoadingProfile = true;
+    });
+
+    try {
+      final profile = await widget.adminRepository.fetchProfile(profileId, widget.idToken);
+      if (!mounted) return;
+      setState(() {
+        selectedProfileInfo = profile;
+        isLoadingProfile = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        isLoadingProfile = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tải thông tin profile: $e')),
+      );
+    }
   }
 
   // Build residents list with edit and delete functionality
@@ -633,6 +779,13 @@ class _ResidentsTabState extends State<ResidentsTab> {
                               if (sortCriteria != null) {
                                 sortResidents(sortCriteria!);
                               }
+
+                              // If the deleted resident was selected, reset selection
+                              if (selectedRoomInfo != null && _getStringValue(selectedRoomInfo!, 'profileId') == _getStringValue(fields, 'profileId')) {
+                                selectedRoomInfo = null;
+                                selectedProfileInfo = null;
+                                isProfileVisible = false;
+                              }
                             });
 
                             // Show success message
@@ -749,7 +902,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
                           thickness: 1,
                           color: Colors.grey,
                         ),
-                        // Right Column: Room Selection
+                        // Right Column: Room Selection and Resident Info
                         Flexible(
                           flex: 1,
                           child: Container(
@@ -838,6 +991,32 @@ class _ResidentsTabState extends State<ResidentsTab> {
                     );
             },
           );
+  }
+
+  // Helper to decode array of strings from Firestore
+  List<String> _getArrayStringValue(Map<String, dynamic> fields, String key) {
+    List<String> list = [];
+    if (fields.containsKey(key) && fields[key]['arrayValue'] != null && fields[key]['arrayValue']['values'] != null) {
+      for (var item in fields[key]['arrayValue']['values']) {
+        if (item.containsKey('stringValue')) {
+          list.add(item['stringValue']);
+        }
+      }
+    }
+    return list;
+  }
+
+  // Helper to decode array of maps from Firestore
+  List<Map<String, dynamic>> _getArrayMapValue(Map<String, dynamic> fields, String key) {
+    List<Map<String, dynamic>> list = [];
+    if (fields.containsKey(key) && fields[key]['arrayValue'] != null && fields[key]['arrayValue']['values'] != null) {
+      for (var item in fields[key]['arrayValue']['values']) {
+        if (item.containsKey('mapValue') && item['mapValue']['fields'] != null) {
+          list.add(Map<String, dynamic>.from(item['mapValue']['fields']));
+        }
+      }
+    }
+    return list;
   }
 }
 
