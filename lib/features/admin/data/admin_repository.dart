@@ -44,8 +44,6 @@ class AdminRepository {
     return allDocuments;
   }
 
-  // Các phương thức khác không thay đổi...
-
   // Hàm lấy danh sách cư dân
   Future<List<dynamic>> fetchResidents(String idToken) async {
     final url = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/residents?key=$apiKey';

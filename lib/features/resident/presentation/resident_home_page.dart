@@ -4,21 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:animated_sidebar/animated_sidebar.dart';
 import '../../.authentication/data/auth_service.dart';
 import '../../.authentication/presentation/login_page.dart';
-import 'profile_page.dart'; // Tạo file này tương tự như guest
-import 'fees_page.dart'; // Tạo file này tương tự như guest
-import 'events_page.dart'; // Tạo file này tương tự như guest
+import '../data/resident_repository.dart';
+import 'profile_page.dart';
+import 'fees_page.dart';
+import 'events_page.dart';
 import 'complaints_page.dart';
 
 class ResidentHomePage extends StatefulWidget {
   final AuthenticationService authService;
   final String idToken;
-  final String uid;
+  final String uid; // Thay đổi từ profileId thành uid
 
   const ResidentHomePage({
     super.key,
     required this.authService,
     required this.idToken,
-    required this.uid,
+    required this.uid, // Thêm uid
   });
 
   @override
@@ -56,7 +57,15 @@ class _ResidentHomePageState extends State<ResidentHomePage> {
   void initState() {
     super.initState();
     _pages = [
-      const ProfilePage(), // 0: Hồ sơ nhân khẩu
+      // Cung cấp uid, idToken và residentRepository cho ProfilePage
+      ProfilePage(
+        uid: widget.uid, // Truyền uid thay vì profileId
+        idToken: widget.idToken,
+        residentRepository: ResidentRepository(
+          apiKey: widget.authService.apiKey, // Đảm bảo authService có apiKey
+          projectId: widget.authService.projectId, // Đảm bảo authService có projectId
+        ),
+      ), // 0: Hồ sơ nhân khẩu
       const FeesPage(), // 1: Phí thanh toán
       EventsPage(
         authService: widget.authService,
