@@ -18,7 +18,7 @@ class ComplaintsPage extends StatefulWidget {
 class _ComplaintsPageState extends State<ComplaintsPage> {
   List<Complaint> complaints = [];
   late List<Complaint> deletedComplaints;
-  late List<Complaint> allComplaints;
+  List<Complaint> allComplaints=[];
   late final ComplaintsRepository complaintsRepository;
   late final AuthenticationService authService;
   late final String? idToken;
@@ -211,7 +211,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                     date: convertTime(),
                     id: '123',
                     isFlagged: false,
-                    bgColor:complaints==[]?Colors.green: complaints[0].bgColor);
+                    bgColor:complaints.isEmpty?Colors.green: complaints[0].bgColor);
                 _addComplaint(complaintData, newComplaint);
                 Navigator.pop(context); // Thực hiện logic, rồi đóng dialog
               },
