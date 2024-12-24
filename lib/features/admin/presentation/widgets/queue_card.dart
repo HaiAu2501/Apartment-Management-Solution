@@ -123,47 +123,52 @@ class _QueueCardState extends State<QueueCard> {
 
     return Column(
       children: [
+        // Nội dung chính của QueueCard
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
           child: Row(
             children: [
-              // Họ và tên
+              // Họ và tên (Căn lề trái)
               Expanded(
                 flex: 3,
                 child: Text(
                   fullName,
                   style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.left, // Căn lề trái
                 ),
               ),
-              // Email
+              // Email (Căn lề trái)
               Expanded(
                 flex: 4,
                 child: Text(
                   email,
                   style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.left, // Căn lề trái
                 ),
               ),
-              // Vai trò
+              // Vai trò (Căn lề trái)
               Expanded(
                 flex: 2,
                 child: Text(
                   role,
                   style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center, // Căn lề trái
                 ),
               ),
-              // Số điện thoại
+              // Số điện thoại (Căn lề trái)
               Expanded(
                 flex: 3,
                 child: Text(
                   phone,
                   style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center, // Căn lề trái
                 ),
               ),
-              // Thao tác
+              // Thao tác (Căn giữa các icon)
               Expanded(
                 flex: 2,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center, // Căn giữa các icon
                   children: [
                     IconButton(
                       icon: const Icon(Icons.check, color: Colors.green),

@@ -264,6 +264,29 @@ class _QueueTabState extends State<QueueTab> {
     });
   }
 
+  // Mới: Hàm để xử lý lựa chọn từ menu "Thao tác" trong tiêu đề
+  void handleHeaderAction(String action) {
+    switch (action) {
+      case 'Sort':
+        showSortDialog();
+        break;
+      case 'Filter':
+        showFilterDialog();
+        break;
+      case 'Reset':
+        setState(() {
+          sortCriteria = null;
+          filterCriteria = null;
+          filterValue = '';
+          applyFilterAndSort();
+          currentPage = 1;
+        });
+        break;
+      default:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoadingQueue) {
@@ -283,9 +306,10 @@ class _QueueTabState extends State<QueueTab> {
 
     return Column(
       children: [
+        SizedBox(height: 8),
         // Thông tin thống kê
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(0),
           child: Row(
             children: [
               Expanded(
@@ -386,40 +410,19 @@ class _QueueTabState extends State<QueueTab> {
             ],
           ),
         ),
-        // Nút Sắp xếp và Lọc
+        // Nút Thao tác trong tiêu đề
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: Row(
             children: [
-              ElevatedButton.icon(
-                onPressed: showSortDialog,
-                icon: const Icon(Icons.sort),
-                label: const Text('Sắp xếp'),
-              ),
-              const SizedBox(width: 10),
-              ElevatedButton.icon(
-                onPressed: showFilterDialog,
-                icon: const Icon(Icons.filter_list),
-                label: const Text('Lọc'),
-              ),
+              // Loại bỏ hai nút "Sắp xếp" và "Lọc"
+              // Thêm Spacer hoặc các widget khác nếu cần
               const Spacer(),
-              if (filterCriteria != null || sortCriteria != null)
-                IconButton(
-                  icon: const Icon(Icons.clear),
-                  tooltip: 'Đặt lại',
-                  onPressed: () {
-                    setState(() {
-                      filterCriteria = null;
-                      sortCriteria = null;
-                      applyFilterAndSort();
-                      currentPage = 1;
-                    });
-                  },
-                ),
+              // Không cần nút "Clear" riêng
             ],
           ),
         ),
-        // Thẻ tiêu đề cột
+        // Thẻ tiêu đề cột với nút "Thao tác"
         Card(
           margin: EdgeInsets.zero, // Loại bỏ margin giữa các Card
           elevation: 0, // Loại bỏ hiệu ứng đổ bóng
@@ -430,55 +433,76 @@ class _QueueTabState extends State<QueueTab> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
             child: Row(
-              children: const [
-                Expanded(
+              children: [
+                // Các cột tiêu đề khác
+                const Expanded(
                   flex: 3,
                   child: Text(
                     'Họ và tên',
+                    textAlign: TextAlign.center, // Căn giữa
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
                 ),
-                Expanded(
+                const Expanded(
                   flex: 4,
                   child: Text(
                     'Email',
+                    textAlign: TextAlign.center, // Căn giữa
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
                 ),
-                Expanded(
+                const Expanded(
                   flex: 2,
                   child: Text(
                     'Vai trò',
+                    textAlign: TextAlign.center, // Căn giữa
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
                 ),
-                Expanded(
+                const Expanded(
                   flex: 3,
                   child: Text(
                     'Số điện thoại',
+                    textAlign: TextAlign.center, // Căn giữa
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
                 ),
+                // Cột Thao tác với nút PopupMenuButton
                 Expanded(
                   flex: 2,
-                  child: Text(
-                    'Thao tác',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                  child: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    tooltip: 'Thao tác',
+                    onSelected: handleHeaderAction,
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'Sort',
+                        child: Text('Sắp xếp'),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'Filter',
+                        child: Text('Lọc'),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'Reset',
+                        child: Text('Đặt lại'),
+                      ),
+                    ],
+                    // Điều chỉnh vị trí của menu
+                    // Bạn có thể cần điều chỉnh giá trị Offset tùy thuộc vào thiết kế của bạn
+                    offset: const Offset(0, 40), // Giảm hoặc tăng giá trị X để căn giữa
                   ),
                 ),
               ],
