@@ -1,15 +1,16 @@
 // lib/features/admin/presentation/tabs/queue_tab.dart
+
 import 'package:flutter/material.dart';
 import '../../../.authentication/data/auth_service.dart';
 import '../../data/admin_repository.dart';
-import '../widgets/edit_user_form.dart';
+import '../widgets/queue_card.dart'; // Import QueueCard
 import 'package:intl/intl.dart';
 
 class QueueTab extends StatefulWidget {
   final AdminRepository adminRepository;
   final String idToken;
   final AuthenticationService authService;
-  final Function(String?) onMessage; // Cho phép nhận String? (có thể là null)
+  final Function(String?) onMessage;
 
   const QueueTab({
     super.key,
@@ -24,27 +25,21 @@ class QueueTab extends StatefulWidget {
 }
 
 class _QueueTabState extends State<QueueTab> {
-  List<dynamic> queueList = []; // Toàn bộ tài khoản trong queue
-  List<dynamic> filteredQueueList = []; // Sau khi lọc và sắp xếp
+  List<dynamic> queueList = [];
+  List<dynamic> filteredQueueList = [];
   bool isLoadingQueue = false;
 
-  // Biến trạng thái cho sắp xếp và lọc
   String? sortCriteria;
   String? filterCriteria;
   String filterValue = '';
 
-  // Biến thống kê
   int totalPending = 0;
   int totalResidentsPending = 0;
   int totalGuestsPending = 0;
 
-  // Phân trang
   int currentPage = 1;
   int totalPages = 1;
   static const int itemsPerPage = 10;
-
-  // Biến quản lý mở rộng dòng
-  Map<String, bool> expandedRows = {};
 
   @override
   void initState() {
@@ -54,11 +49,9 @@ class _QueueTabState extends State<QueueTab> {
 
   @override
   void dispose() {
-    // Nếu bạn có các Stream hoặc các đối tượng khác cần hủy bỏ, hãy thực hiện ở đây.
     super.dispose();
   }
 
-  // Hàm lấy tất cả danh sách chờ duyệt
   Future<void> fetchQueue() async {
     setState(() {
       isLoadingQueue = true;
@@ -66,14 +59,14 @@ class _QueueTabState extends State<QueueTab> {
 
     try {
       List<dynamic> fetchedQueue = await widget.adminRepository.fetchAllQueue(widget.idToken);
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
+      if (!mounted) return;
       setState(() {
         queueList = fetchedQueue;
-        applyFilterAndSort(); // Áp dụng lọc và sắp xếp sau khi lấy dữ liệu
+        applyFilterAndSort();
         isLoadingQueue = false;
       });
     } catch (e) {
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
+      if (!mounted) return;
       widget.onMessage('Lỗi khi tải danh sách chờ duyệt.');
       print('Lỗi khi tải queue: $e');
       setState(() {
@@ -82,115 +75,13 @@ class _QueueTabState extends State<QueueTab> {
     }
   }
 
-  // Hàm tính toán thống kê dựa trên toàn bộ queueList
   void calculateStatistics() {
     totalPending = queueList.length;
     totalResidentsPending = queueList.where((user) => user['fields']['role']['stringValue'] == 'Cư dân').length;
     totalGuestsPending = queueList.where((user) => user['fields']['role']['stringValue'] == 'Khách').length;
   }
 
-  // Hàm phê duyệt người dùng từ queue
-  Future<void> approveUser(String queueDocName, Map<String, dynamic> queueData) async {
-    widget.onMessage(null); // Bỏ thông báo hiện tại
-
-    try {
-      await widget.adminRepository.approveUser(queueDocName, queueData, widget.idToken, widget.authService);
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
-      widget.onMessage('Phê duyệt thành công.');
-      // Reset danh sách và fetch lại từ đầu
-      setState(() {
-        currentPage = 1;
-      });
-      fetchQueue();
-    } catch (e) {
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
-      widget.onMessage(e.toString());
-      print('Lỗi khi phê duyệt user: $e');
-    }
-  }
-
-  // Hàm từ chối người dùng
-  Future<void> rejectUser(String queueDocName) async {
-    widget.onMessage(null); // Bỏ thông báo hiện tại
-
-    try {
-      await widget.adminRepository.rejectUser(queueDocName, widget.idToken, widget.authService);
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
-      widget.onMessage('Đã từ chối người dùng.');
-      // Reset danh sách và fetch lại từ đầu
-      setState(() {
-        currentPage = 1;
-      });
-      fetchQueue();
-    } catch (e) {
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
-      widget.onMessage(e.toString());
-      print('Lỗi khi từ chối user: $e');
-    }
-  }
-
-  // Hàm chỉnh sửa người dùng
-  Future<void> editUser(String queueDocName, Map<String, dynamic> updatedData) async {
-    widget.onMessage(null); // Bỏ thông báo hiện tại
-
-    try {
-      await widget.adminRepository.updateQueueDocument(queueDocName, updatedData, widget.idToken);
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
-      widget.onMessage('Đã cập nhật thông tin người dùng.');
-      // Reset danh sách và fetch lại từ đầu
-      setState(() {
-        currentPage = 1;
-      });
-      fetchQueue();
-    } catch (e) {
-      if (!mounted) return; // Kiểm tra nếu widget vẫn còn mount
-      widget.onMessage('Lỗi khi cập nhật thông tin.');
-      print('Lỗi khi cập nhật user: $e');
-    }
-  }
-
-  // Hàm chuyển đổi trạng thái mở rộng của dòng
-  void toggleExpanded(String docName) {
-    setState(() {
-      expandedRows[docName] = !(expandedRows[docName] ?? false);
-    });
-  }
-
-  // Hàm định dạng ngày sinh
-  String formatDob(String dobString) {
-    try {
-      // Giả sử dobString có định dạng DD/MM/YYYY
-      DateFormat inputFormat = DateFormat('dd/MM/yyyy');
-      DateFormat outputFormat = DateFormat('dd/MM/yyyy');
-      DateTime date = inputFormat.parse(dobString);
-      return outputFormat.format(date);
-    } catch (e) {
-      return dobString; // Nếu không thể định dạng, trả về nguyên bản
-    }
-  }
-
-  // Hàm xử lý sắp xếp
-  void sortQueue(String criteria) {
-    setState(() {
-      sortCriteria = criteria;
-      applyFilterAndSort();
-      currentPage = 1; // Đặt lại trang hiện tại về 1 khi sắp xếp
-    });
-  }
-
-  // Hàm xử lý lọc
-  void filterQueue(String criteria, String value) {
-    setState(() {
-      filterCriteria = criteria;
-      filterValue = value.toLowerCase();
-      applyFilterAndSort();
-      currentPage = 1; // Đặt lại trang hiện tại về 1 khi lọc
-    });
-  }
-
-  // Hàm áp dụng lọc và sắp xếp
   void applyFilterAndSort() {
-    // Bước 1: Lọc
     if (filterCriteria != null && filterValue.isNotEmpty) {
       filteredQueueList = queueList.where((user) {
         final fields = user['fields'];
@@ -205,7 +96,6 @@ class _QueueTabState extends State<QueueTab> {
       filteredQueueList = List.from(queueList);
     }
 
-    // Bước 2: Sắp xếp
     if (sortCriteria != null) {
       filteredQueueList.sort((a, b) {
         final aFields = a['fields'];
@@ -214,13 +104,11 @@ class _QueueTabState extends State<QueueTab> {
           case 'fullName':
             return aFields['fullName']['stringValue'].compareTo(bFields['fullName']['stringValue']);
           case 'floor':
-            // Chỉ sắp xếp nếu cả hai đều là Cư dân
             if (aFields['role']['stringValue'] == 'Cư dân' && bFields['role']['stringValue'] == 'Cư dân') {
               return int.parse(aFields['floor']['integerValue']).compareTo(int.parse(bFields['floor']['integerValue']));
             }
             return 0;
           case 'apartmentNumber':
-            // Chỉ sắp xếp nếu cả hai đều là Cư dân
             if (aFields['role']['stringValue'] == 'Cư dân' && bFields['role']['stringValue'] == 'Cư dân') {
               return int.parse(aFields['apartmentNumber']['integerValue']).compareTo(int.parse(bFields['apartmentNumber']['integerValue']));
             }
@@ -231,14 +119,28 @@ class _QueueTabState extends State<QueueTab> {
       });
     }
 
-    // Bước 3: Tính toán tổng số trang
     totalPages = (filteredQueueList.length / itemsPerPage).ceil();
 
-    // Bước 4: Tính toán thống kê dựa trên toàn bộ queueList
     calculateStatistics();
   }
 
-  // Hàm hiển thị dialog sắp xếp
+  void sortQueue(String criteria) {
+    setState(() {
+      sortCriteria = criteria;
+      applyFilterAndSort();
+      currentPage = 1;
+    });
+  }
+
+  void filterQueue(String criteria, String value) {
+    setState(() {
+      filterCriteria = criteria;
+      filterValue = value.toLowerCase();
+      applyFilterAndSort();
+      currentPage = 1;
+    });
+  }
+
   void showSortDialog() {
     showDialog(
       context: context,
@@ -276,10 +178,9 @@ class _QueueTabState extends State<QueueTab> {
     );
   }
 
-  // Hàm hiển thị dialog lọc
   void showFilterDialog() {
     String selectedCriteria = 'role';
-    String inputValue = 'Cư dân'; // Mặc định là "Cư dân"
+    String inputValue = 'Cư dân';
 
     showDialog(
       context: context,
@@ -297,7 +198,6 @@ class _QueueTabState extends State<QueueTab> {
                       if (newValue != null) {
                         setState(() {
                           selectedCriteria = newValue;
-                          // Reset giá trị khi thay đổi tiêu chí
                           inputValue = newValue == 'role' ? 'Cư dân' : '';
                         });
                       }
@@ -334,7 +234,6 @@ class _QueueTabState extends State<QueueTab> {
                         );
                       }).toList(),
                     ),
-                  // Bạn có thể thêm các tiêu chí lọc khác ở đây nếu cần
                 ],
               );
             },
@@ -359,7 +258,6 @@ class _QueueTabState extends State<QueueTab> {
     );
   }
 
-  // Hàm chuyển trang
   void goToPage(int page) {
     setState(() {
       currentPage = page;
@@ -376,7 +274,6 @@ class _QueueTabState extends State<QueueTab> {
       return const Center(child: Text('Không có yêu cầu nào đang chờ duyệt.'));
     }
 
-    // Tính toán danh sách người dùng hiển thị theo trang hiện tại
     int startIndex = (currentPage - 1) * itemsPerPage;
     int endIndex = startIndex + itemsPerPage;
     if (endIndex > filteredQueueList.length) {
@@ -391,10 +288,14 @@ class _QueueTabState extends State<QueueTab> {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: [
-              // Tổng số tài khoản chờ duyệt
               Expanded(
                 child: Card(
                   color: Colors.blue.shade50,
+                  margin: EdgeInsets.zero, // Loại bỏ margin giữa các Card
+                  elevation: 0, // Loại bỏ hiệu ứng đổ bóng
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero, // Loại bỏ bo góc
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -419,10 +320,14 @@ class _QueueTabState extends State<QueueTab> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Số lượng tài khoản Cư dân chờ duyệt
               Expanded(
                 child: Card(
                   color: Colors.green.shade50,
+                  margin: EdgeInsets.zero,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -447,10 +352,14 @@ class _QueueTabState extends State<QueueTab> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Số lượng tài khoản Khách chờ duyệt
               Expanded(
                 child: Card(
                   color: Colors.orange.shade50,
+                  margin: EdgeInsets.zero,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -494,7 +403,6 @@ class _QueueTabState extends State<QueueTab> {
                 label: const Text('Lọc'),
               ),
               const Spacer(),
-              // Nút Đặt lại bộ lọc và sắp xếp nếu cần
               if (filterCriteria != null || sortCriteria != null)
                 IconButton(
                   icon: const Icon(Icons.clear),
@@ -511,6 +419,72 @@ class _QueueTabState extends State<QueueTab> {
             ],
           ),
         ),
+        // Thẻ tiêu đề cột
+        Card(
+          margin: EdgeInsets.zero, // Loại bỏ margin giữa các Card
+          elevation: 0, // Loại bỏ hiệu ứng đổ bóng
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero, // Loại bỏ bo góc
+          ),
+          color: Colors.grey.shade200, // Màu nền cho tiêu đề
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+            child: Row(
+              children: const [
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    'Họ và tên',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 4,
+                  child: Text(
+                    'Email',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Vai trò',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    'Số điện thoại',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Thao tác',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         // Danh sách người dùng
         Expanded(
           child: currentPageList.isEmpty
@@ -521,84 +495,14 @@ class _QueueTabState extends State<QueueTab> {
                     final doc = currentPageList[index];
                     final fields = doc['fields'];
                     final docName = doc['name'];
-                    bool isExpanded = expandedRows[docName] ?? false;
 
-                    return Card(
-                      child: Column(
-                        children: [
-                          ListTile(
-                            title: Text(fields['fullName']['stringValue']),
-                            subtitle: Row(
-                              children: [
-                                Expanded(child: Text('Giới tính: ${fields['gender']['stringValue']}')),
-                                Expanded(child: Text('Email: ${fields['email']['stringValue']}')),
-                                Expanded(child: Text('Vai trò: ${fields['role']['stringValue']}')),
-                                Expanded(child: Text('SĐT: ${fields['phone']['stringValue']}')),
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.check, color: Colors.green),
-                                  tooltip: 'Phê duyệt',
-                                  onPressed: () {
-                                    approveUser(docName, fields);
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.close, color: Colors.red),
-                                  tooltip: 'Từ chối',
-                                  onPressed: () {
-                                    rejectUser(docName);
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.visibility, color: Colors.blue),
-                                  tooltip: 'Xem thêm',
-                                  onPressed: () {
-                                    toggleExpanded(docName);
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.orange),
-                                  tooltip: 'Chỉnh sửa',
-                                  onPressed: () {
-                                    toggleExpanded(docName);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Dòng mở rộng khi xem thêm hoặc chỉnh sửa
-                          if (isExpanded)
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Hiển thị chi tiết hoặc biểu mẫu chỉnh sửa
-                                  Text('Ngày sinh: ${formatDob(fields['dob']['stringValue'])}'),
-                                  Text('Số ID: ${fields['id']['stringValue']}'),
-                                  if (fields['role']['stringValue'] == 'Khách') Text('Chức vụ: ${fields['jobTitle']['stringValue']}'),
-                                  if (fields['role']['stringValue'] == 'Cư dân') ...[
-                                    Text('Tầng: ${fields['floor']['integerValue']}'),
-                                    Text('Căn hộ số: ${fields['apartmentNumber']['integerValue']}'),
-                                  ],
-                                  Text('Trạng thái: ${fields['status']['stringValue']}'),
-                                  const SizedBox(height: 10),
-                                  // Biểu mẫu chỉnh sửa
-                                  EditUserForm(
-                                    initialData: fields,
-                                    onSave: (updatedData) {
-                                      editUser(docName, updatedData);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
+                    return QueueCard(
+                      userData: fields ?? {}, // Đảm bảo 'fields' không null
+                      docName: docName,
+                      adminRepository: widget.adminRepository,
+                      idToken: widget.idToken,
+                      authService: widget.authService,
+                      onMessage: widget.onMessage,
                     );
                   },
                 ),
