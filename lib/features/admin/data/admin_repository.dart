@@ -103,6 +103,21 @@ class AdminRepository {
       throw Exception('Không lấy được UID của người dùng.');
     }
 
+    // **New Code Start**
+    // Extract floor and apartmentNumber from queueData
+    int floor;
+    int apartmentNumber;
+    try {
+      floor = int.parse(queueData['floor']['integerValue']);
+      apartmentNumber = int.parse(queueData['apartmentNumber']['integerValue']);
+    } catch (e) {
+      throw Exception('Dữ liệu floor hoặc apartmentNumber không hợp lệ.');
+    }
+
+    // Generate profileId as "{floor}-{apartmentNumber}"
+    String profileId = '$floor-$apartmentNumber';
+    // **New Code End**
+
     // Chuẩn bị dữ liệu cho collection đích và thêm profileId
     if (role == 'Cư dân') {
       targetData = {
@@ -111,11 +126,11 @@ class AdminRepository {
         'dob': queueData['dob']['stringValue'],
         'phone': queueData['phone']['stringValue'],
         'id': queueData['id']['stringValue'],
-        'floor': int.parse(queueData['floor']['integerValue']),
-        'apartmentNumber': int.parse(queueData['apartmentNumber']['integerValue']),
+        'floor': floor, // Already parsed as int
+        'apartmentNumber': apartmentNumber, // Already parsed as int
         'email': email,
         'status': 'Đã duyệt',
-        'profileId': uid, // Thêm profileId
+        'profileId': profileId, // Sử dụng profileId mới
       };
     } else if (role == 'Khách') {
       targetData = {
@@ -127,7 +142,7 @@ class AdminRepository {
         'email': email,
         'jobTitle': queueData['jobTitle']['stringValue'],
         'status': 'Đã duyệt',
-        'profileId': uid, // Thêm profileId
+        'profileId': profileId, // Sử dụng profileId mới
       };
     } else {
       throw Exception('Vai trò không hợp lệ.');
@@ -148,7 +163,7 @@ class AdminRepository {
       throw Exception('Phê duyệt thất bại khi tạo tài liệu trong $targetCollection.');
     }
 
-    // Tạo profile document trong collection 'profiles' với documentId = profileId (uid)
+    // Tạo profile document trong collection 'profiles' với documentId = profileId ("{floor}-{apartmentNumber}")
     Map<String, dynamic> profileData = {
       'householdHead': _encodeField(''), // Initialize as empty string
       'occupation': _encodeField(''), // Initialize as empty string
@@ -160,7 +175,7 @@ class AdminRepository {
       'utilities': _encodeField(<String>[]), // Empty array
     };
 
-    final profileUrl = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/profiles/$uid?key=$apiKey';
+    final profileUrl = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/profiles/$profileId?key=$apiKey';
 
     final profileResponse = await http.patch(
       Uri.parse(profileUrl),

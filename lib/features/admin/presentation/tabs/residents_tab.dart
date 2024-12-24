@@ -39,8 +39,9 @@ class _ResidentsTabState extends State<ResidentsTab> {
   Map<String, dynamic>? selectedProfileInfo;
   bool isLoadingProfile = false;
 
-  // Biến để kiểm soát việc hiển thị thông tin Profile
-  bool isProfileVisible = false;
+  // Variables for additional information table
+  bool isAdditionalInfoVisible = false;
+  List<Map<String, dynamic>> additionalInfoList = [];
 
   @override
   void initState() {
@@ -336,7 +337,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
               // Reset selected room info and profile info when floor changes
               selectedRoomInfo = null;
               selectedProfileInfo = null;
-              isProfileVisible = false;
+              isAdditionalInfoVisible = false;
             });
           },
           itemBuilder: (BuildContext context) => List<PopupMenuEntry<int>>.generate(
@@ -405,11 +406,11 @@ class _ResidentsTabState extends State<ResidentsTab> {
           ),
         ),
         // Display selected room info
-        if (selectedRoomInfo != null)
+        if (selectedRoomInfo != null || selectedProfileInfo != null)
           Flexible(
             flex: 10,
             child: SingleChildScrollView(
-              child: buildResidentInfoCard(selectedRoomInfo!),
+              child: buildResidentInfoCard(),
             ),
           ),
       ],
@@ -417,7 +418,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
   }
 
   // Show resident information (updates the state to display below the grid)
-  void _showResidentInfo(int roomNumber) {
+  Future<void> _showResidentInfo(int roomNumber) async {
     print('Selected Floor: $selectedFloor, Room Number: $roomNumber');
     Map<String, dynamic>? resident;
     try {
@@ -435,17 +436,26 @@ class _ResidentsTabState extends State<ResidentsTab> {
     if (resident != null) {
       final fields = resident['fields'];
       if (fields != null) {
+        String profileId = _getStringValue(fields, 'profileId');
         setState(() {
           selectedRoomInfo = Map<String, dynamic>.from(fields);
-          selectedProfileInfo = null; // Reset profile info when selecting a new resident
-          isProfileVisible = false; // Ẩn Profile khi chọn cư dân mới
-          print('Selected Resident Info: $selectedRoomInfo');
+          isAdditionalInfoVisible = false; // Reset additional info visibility
         });
+        if (profileId.isNotEmpty) {
+          await fetchProfile(profileId);
+        } else {
+          setState(() {
+            selectedProfileInfo = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không tìm thấy profileId.')),
+          );
+        }
       } else {
         setState(() {
           selectedRoomInfo = null;
           selectedProfileInfo = null;
-          isProfileVisible = false;
+          isAdditionalInfoVisible = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Không tìm thấy dữ liệu cư dân.')),
@@ -456,7 +466,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
       setState(() {
         selectedRoomInfo = null;
         selectedProfileInfo = null;
-        isProfileVisible = false;
+        isAdditionalInfoVisible = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Không tìm thấy cư dân trong căn hộ này.')),
@@ -465,8 +475,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
   }
 
   // Build resident info card with "Thêm thông tin" button
-  Widget buildResidentInfoCard(Map<String, dynamic> info) {
-    String profileId = _getStringValue(info, 'profileId');
+  Widget buildResidentInfoCard() {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -475,79 +484,55 @@ class _ResidentsTabState extends State<ResidentsTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Phần trên: Nút "Thêm thông tin" hoặc "Ẩn thông tin"
+            // Header: "Thông tin gia đình" and "Thêm thông tin" button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Text(
+                  'Thông tin gia đình',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[800],
+                  ),
+                ),
                 ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      if (!isProfileVisible) {
-                        // Nếu Profile chưa được hiển thị, fetch dữ liệu
-                        fetchProfile(profileId);
-                      } else {
-                        // Nếu Profile đang hiển thị, ẩn đi
-                        selectedProfileInfo = null;
-                      }
-                      isProfileVisible = !isProfileVisible;
-                    });
+                    if (!isAdditionalInfoVisible) {
+                      // Show additional info
+                      setState(() {
+                        isAdditionalInfoVisible = true;
+                        additionalInfoList = residentsList.where((resident) {
+                          final fields = resident['fields'] ?? {};
+                          return _getIntegerValue(fields, 'floor') == _getIntegerValue(selectedRoomInfo!, 'floor') && _getIntegerValue(fields, 'apartmentNumber') == _getIntegerValue(selectedRoomInfo!, 'apartmentNumber');
+                        }).toList();
+                      });
+                    } else {
+                      // Hide additional info
+                      setState(() {
+                        isAdditionalInfoVisible = false;
+                        additionalInfoList = [];
+                      });
+                    }
                   },
-                  child: Text(isProfileVisible ? 'Ẩn thông tin' : 'Thêm thông tin'),
+                  child: Text(isAdditionalInfoVisible ? 'Ẩn thông tin' : 'Thêm thông tin'),
                 ),
               ],
             ),
-            // Phần dưới: Chia thành hai cột bên trái và bên phải
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Bên trái: Thông tin căn hộ
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Thêm lề phía trên tiêu đề "Thông tin căn hộ"
-                      Padding(
-                        padding: const EdgeInsets.only(top: 25.0),
-                        child: Text(
-                          'Thông tin căn hộ ${_getIntegerValue(info, 'apartmentNumber')}',
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      // Thông tin căn hộ
-                      Text('Họ và Tên: ${_getStringValue(info, 'fullName')}'),
-                      Text('Giới tính: ${_getStringValue(info, 'gender')}'),
-                      Text('Ngày sinh: ${_getStringValue(info, 'dob').isNotEmpty ? formatDob(_getStringValue(info, 'dob')) : ''}'),
-                      Text('Số điện thoại: ${_getStringValue(info, 'phone')}'),
-                      Text('Số ID: ${_getStringValue(info, 'id')}'),
-                      Text('Email: ${_getStringValue(info, 'email')}'),
-                      Text('Tầng: ${_getIntegerValue(info, 'floor')}'),
-                      Text('Căn hộ số: ${_getIntegerValue(info, 'apartmentNumber')}'),
-                      Text('Trạng thái: ${_getStringValue(info, 'status')}'),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20), // Khoảng cách giữa hai cột
-                // Bên phải: Thông tin Profile (hiển thị khi isProfileVisible == true)
-                if (isProfileVisible)
-                  Expanded(
-                    flex: 1,
-                    child: selectedProfileInfo != null ? buildProfileInfoCard(selectedProfileInfo!) : const Center(child: CircularProgressIndicator()),
-                  ),
-              ],
-            ),
+            const Divider(),
+            // Display Family Information
+            selectedProfileInfo != null ? buildFamilyInfo(selectedProfileInfo!) : const Text('Đang tìm thông tin...'),
+            const SizedBox(height: 10),
+            // Display Additional Information Table
+            if (isAdditionalInfoVisible) buildAdditionalInfoTable(),
           ],
         ),
       ),
     );
   }
 
-  // Build profile info card
-  Widget buildProfileInfoCard(Map<String, dynamic> profileInfo) {
+  // Build family information section with improved layout
+  Widget buildFamilyInfo(Map<String, dynamic> profileInfo) {
     // Decode profileInfo theo các kiểu dữ liệu của Firestore
     String householdHead = _getStringValue(profileInfo, 'householdHead');
     String occupation = _getStringValue(profileInfo, 'occupation');
@@ -558,45 +543,125 @@ class _ResidentsTabState extends State<ResidentsTab> {
     List<String> utilities = _getArrayStringValue(profileInfo, 'utilities');
     List<Map<String, dynamic>> vehicles = _getArrayMapValue(profileInfo, 'vehicles');
 
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(top: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Row for "Chủ nhà" and "Nghề nghiệp"
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Chủ nhà: $householdHead',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                'Nghề nghiệp: $occupation',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text('Liên lạc khẩn cấp:'),
+        ...emergencyContacts.map((contact) => Text('- $contact')).toList(),
+        const SizedBox(height: 5),
+        Text('Thành viên:'),
+        ...members.map((member) {
+          String name = _getStringValue(member, 'name');
+          String relationship = _getStringValue(member, 'relationship');
+          return Text('- $name ($relationship)');
+        }).toList(),
+        const SizedBox(height: 5),
+        // Row for "Ngày vào" and "Ngày ra"
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Ngày vào: ${moveInDate.isNotEmpty ? formatDob(moveInDate) : ''}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                'Ngày ra: ${moveOutDate.isNotEmpty ? formatDob(moveOutDate) : ''}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        // Row for "Tiện ích" and "Phương tiện"
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Thông tin gia đình',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Tiện ích:'),
+                  ...utilities.map((utility) => Text('- $utility')).toList(),
+                ],
+              ),
             ),
-            const SizedBox(height: 1),
-            Text('Chủ nhà: $householdHead'),
-            Text('Nghề nghiệp: $occupation'),
-            const SizedBox(height: 1),
-            Text('Liên lạc khẩn cấp:'),
-            ...emergencyContacts.map((contact) => Text('- $contact')).toList(),
-            const SizedBox(height: 1),
-            Text('Thành viên:'),
-            ...members.map((member) {
-              String name = _getStringValue(member, 'name');
-              String relationship = _getStringValue(member, 'relationship');
-              return Text('- $name ($relationship)');
-            }).toList(),
-            const SizedBox(height: 1),
-            Text('Ngày vào: $moveInDate'),
-            Text('Ngày ra: $moveOutDate'),
-            const SizedBox(height: 1),
-            Text('Tiện ích:'),
-            ...utilities.map((utility) => Text('- $utility')).toList(),
-            const SizedBox(height: 1),
-            Text('Phương tiện:'),
-            ...vehicles.map((vehicle) {
-              String type = _getStringValue(vehicle, 'type');
-              String number = _getStringValue(vehicle, 'number');
-              return Text('- $type: $number');
-            }).toList(),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Phương tiện:'),
+                  ...vehicles.map((vehicle) {
+                    String type = _getStringValue(vehicle, 'type');
+                    String number = _getStringValue(vehicle, 'number');
+                    return Text('- $type: $number');
+                  }).toList(),
+                ],
+              ),
+            ),
           ],
+        ),
+      ],
+    );
+  }
+
+  // Build additional information table
+  Widget buildAdditionalInfoTable() {
+    return Padding(
+      padding: const EdgeInsets.all(0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(
+              label: Text(
+                'Họ và Tên',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Email',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Số điện thoại',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          rows: additionalInfoList.map((resident) {
+            final fields = resident['fields'] ?? {};
+            String fullName = _getStringValue(fields, 'fullName');
+            String email = _getStringValue(fields, 'email');
+            String phone = _getStringValue(fields, 'phone');
+            return DataRow(cells: [
+              DataCell(Text(fullName)),
+              DataCell(Text(email)),
+              DataCell(Text(phone)),
+            ]);
+          }).toList(),
         ),
       ),
     );
@@ -621,7 +686,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
         isLoadingProfile = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi tải thông tin profile: $e')),
+        SnackBar(content: Text('Lỗi khi tải thông tin gia đình: $e')),
       );
     }
   }
@@ -784,7 +849,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
                               if (selectedRoomInfo != null && _getStringValue(selectedRoomInfo!, 'profileId') == _getStringValue(fields, 'profileId')) {
                                 selectedRoomInfo = null;
                                 selectedProfileInfo = null;
-                                isProfileVisible = false;
+                                isAdditionalInfoVisible = false;
                               }
                             });
 
@@ -854,7 +919,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
                         Flexible(
                           flex: 1,
                           child: Container(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(4.0),
                             child: Column(
                               // Set mainAxisSize to max to fill the available space
                               mainAxisSize: MainAxisSize.max,

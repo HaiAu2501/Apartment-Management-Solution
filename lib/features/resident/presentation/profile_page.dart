@@ -728,11 +728,26 @@ class _ProfilePageState extends State<ProfilePage> {
               onTap: isEditing && !readOnly
                   ? () async {
                       DateTime initialDate = _isValidDate(controller.text.trim()) ? _convertStringToDate(controller.text.trim()) : DateTime.now();
+
+                      // Define firstDate and lastDate based on fieldName
+                      DateTime firstDate;
+                      DateTime lastDate;
+
+                      if (fieldName == 'moveInDate') {
+                        // moveInDate: Cannot select dates after today
+                        firstDate = DateTime(1900);
+                        lastDate = DateTime.now();
+                      } else {
+                        // moveOutDate: Cannot select dates before today
+                        firstDate = DateTime.now();
+                        lastDate = DateTime(DateTime.now().year + 10);
+                      }
+
                       DateTime? pickedDate = await showDatePicker(
                         context: context,
                         initialDate: initialDate,
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
+                        firstDate: firstDate,
+                        lastDate: lastDate,
                       );
                       if (pickedDate != null) {
                         setState(() {
@@ -857,9 +872,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hồ Sơ Nhân Khẩu'),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -966,9 +978,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         'Quan hệ:',
                         relationshipController,
                         (value) {
-                          setState(() {
-                            member.relationship = value;
-                          });
+                          member.relationship = value;
                         },
                       ),
                     ),
@@ -980,9 +990,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         'Tên:',
                         nameController,
                         (value) {
-                          setState(() {
-                            member.name = value;
-                          });
+                          member.name = value;
                         },
                       ),
                     ),
