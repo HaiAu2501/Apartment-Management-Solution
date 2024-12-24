@@ -35,6 +35,14 @@ class _ResidentsTabState extends State<ResidentsTab> {
   // Selected room info
   Map<String, dynamic>? selectedRoomInfo;
 
+  // Variables for profile information
+  Map<String, dynamic>? selectedProfileInfo;
+  bool isLoadingProfile = false;
+
+  // Variables for additional information table
+  bool isAdditionalInfoVisible = false;
+  List<Map<String, dynamic>> additionalInfoList = [];
+
   @override
   void initState() {
     super.initState();
@@ -326,8 +334,10 @@ class _ResidentsTabState extends State<ResidentsTab> {
           onSelected: (int floor) {
             setState(() {
               selectedFloor = floor;
-              // Reset selected room info when floor changes
+              // Reset selected room info and profile info when floor changes
               selectedRoomInfo = null;
+              selectedProfileInfo = null;
+              isAdditionalInfoVisible = false;
             });
           },
           itemBuilder: (BuildContext context) => List<PopupMenuEntry<int>>.generate(
@@ -395,13 +405,12 @@ class _ResidentsTabState extends State<ResidentsTab> {
             },
           ),
         ),
-        const SizedBox(height: 10),
         // Display selected room info
-        if (selectedRoomInfo != null)
-          Expanded(
-            flex: 5,
+        if (selectedRoomInfo != null || selectedProfileInfo != null)
+          Flexible(
+            flex: 10,
             child: SingleChildScrollView(
-              child: buildResidentInfoCard(selectedRoomInfo!),
+              child: buildResidentInfoCard(),
             ),
           ),
       ],
@@ -409,7 +418,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
   }
 
   // Show resident information (updates the state to display below the grid)
-  void _showResidentInfo(int roomNumber) {
+  Future<void> _showResidentInfo(int roomNumber) async {
     print('Selected Floor: $selectedFloor, Room Number: $roomNumber');
     Map<String, dynamic>? resident;
     try {
@@ -427,13 +436,26 @@ class _ResidentsTabState extends State<ResidentsTab> {
     if (resident != null) {
       final fields = resident['fields'];
       if (fields != null) {
+        String profileId = _getStringValue(fields, 'profileId');
         setState(() {
           selectedRoomInfo = Map<String, dynamic>.from(fields);
-          print('Selected Resident Info: $selectedRoomInfo');
+          isAdditionalInfoVisible = false; // Reset additional info visibility
         });
+        if (profileId.isNotEmpty) {
+          await fetchProfile(profileId);
+        } else {
+          setState(() {
+            selectedProfileInfo = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không tìm thấy profileId.')),
+          );
+        }
       } else {
         setState(() {
           selectedRoomInfo = null;
+          selectedProfileInfo = null;
+          isAdditionalInfoVisible = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Không tìm thấy dữ liệu cư dân.')),
@@ -443,6 +465,8 @@ class _ResidentsTabState extends State<ResidentsTab> {
       // Handle when no resident is found in the room
       setState(() {
         selectedRoomInfo = null;
+        selectedProfileInfo = null;
+        isAdditionalInfoVisible = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Không tìm thấy cư dân trong căn hộ này.')),
@@ -450,8 +474,8 @@ class _ResidentsTabState extends State<ResidentsTab> {
     }
   }
 
-  // Build resident info card
-  Widget buildResidentInfoCard(Map<String, dynamic> info) {
+  // Build resident info card with "Thêm thông tin" button
+  Widget buildResidentInfoCard() {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -460,24 +484,211 @@ class _ResidentsTabState extends State<ResidentsTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Thông tin căn hộ ${_getIntegerValue(info, 'apartmentNumber')}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            // Header: "Thông tin gia đình" and "Thêm thông tin" button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Thông tin gia đình',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[800],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (!isAdditionalInfoVisible) {
+                      // Show additional info
+                      setState(() {
+                        isAdditionalInfoVisible = true;
+                        additionalInfoList = residentsList.where((resident) {
+                          final fields = resident['fields'] ?? {};
+                          return _getIntegerValue(fields, 'floor') == _getIntegerValue(selectedRoomInfo!, 'floor') && _getIntegerValue(fields, 'apartmentNumber') == _getIntegerValue(selectedRoomInfo!, 'apartmentNumber');
+                        }).toList();
+                      });
+                    } else {
+                      // Hide additional info
+                      setState(() {
+                        isAdditionalInfoVisible = false;
+                        additionalInfoList = [];
+                      });
+                    }
+                  },
+                  child: Text(isAdditionalInfoVisible ? 'Ẩn thông tin' : 'Thêm thông tin'),
+                ),
+              ],
             ),
+            const Divider(),
+            // Display Family Information
+            selectedProfileInfo != null ? buildFamilyInfo(selectedProfileInfo!) : const Text('Đang tìm thông tin...'),
             const SizedBox(height: 10),
-            Text('Họ và Tên: ${_getStringValue(info, 'fullName')}'),
-            Text('Giới tính: ${_getStringValue(info, 'gender')}'),
-            Text('Ngày sinh: ${_getStringValue(info, 'dob').isNotEmpty ? formatDob(_getStringValue(info, 'dob')) : ''}'),
-            Text('Số điện thoại: ${_getStringValue(info, 'phone')}'),
-            Text('Số ID: ${_getStringValue(info, 'id')}'),
-            Text('Email: ${_getStringValue(info, 'email')}'),
-            Text('Tầng: ${_getIntegerValue(info, 'floor')}'),
-            Text('Căn hộ số: ${_getIntegerValue(info, 'apartmentNumber')}'),
-            Text('Trạng thái: ${_getStringValue(info, 'status')}'),
+            // Display Additional Information Table
+            if (isAdditionalInfoVisible) buildAdditionalInfoTable(),
           ],
         ),
       ),
     );
+  }
+
+  // Build family information section with improved layout
+  Widget buildFamilyInfo(Map<String, dynamic> profileInfo) {
+    // Decode profileInfo theo các kiểu dữ liệu của Firestore
+    String householdHead = _getStringValue(profileInfo, 'householdHead');
+    String occupation = _getStringValue(profileInfo, 'occupation');
+    List<String> emergencyContacts = _getArrayStringValue(profileInfo, 'emergencyContacts');
+    List<Map<String, dynamic>> members = _getArrayMapValue(profileInfo, 'members');
+    String moveInDate = _getStringValue(profileInfo, 'moveInDate');
+    String moveOutDate = _getStringValue(profileInfo, 'moveOutDate');
+    List<String> utilities = _getArrayStringValue(profileInfo, 'utilities');
+    List<Map<String, dynamic>> vehicles = _getArrayMapValue(profileInfo, 'vehicles');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Row for "Chủ nhà" and "Nghề nghiệp"
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Chủ nhà: $householdHead',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                'Nghề nghiệp: $occupation',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text('Liên lạc khẩn cấp:'),
+        ...emergencyContacts.map((contact) => Text('- $contact')).toList(),
+        const SizedBox(height: 5),
+        Text('Thành viên:'),
+        ...members.map((member) {
+          String name = _getStringValue(member, 'name');
+          String relationship = _getStringValue(member, 'relationship');
+          return Text('- $name ($relationship)');
+        }).toList(),
+        const SizedBox(height: 5),
+        // Row for "Ngày vào" and "Ngày ra"
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Ngày vào: ${moveInDate.isNotEmpty ? formatDob(moveInDate) : ''}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                'Ngày ra: ${moveOutDate.isNotEmpty ? formatDob(moveOutDate) : ''}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        // Row for "Tiện ích" and "Phương tiện"
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Tiện ích:'),
+                  ...utilities.map((utility) => Text('- $utility')).toList(),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Phương tiện:'),
+                  ...vehicles.map((vehicle) {
+                    String type = _getStringValue(vehicle, 'type');
+                    String number = _getStringValue(vehicle, 'number');
+                    return Text('- $type: $number');
+                  }).toList(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Build additional information table
+  Widget buildAdditionalInfoTable() {
+    return Padding(
+      padding: const EdgeInsets.all(0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(
+              label: Text(
+                'Họ và Tên',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Email',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Số điện thoại',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          rows: additionalInfoList.map((resident) {
+            final fields = resident['fields'] ?? {};
+            String fullName = _getStringValue(fields, 'fullName');
+            String email = _getStringValue(fields, 'email');
+            String phone = _getStringValue(fields, 'phone');
+            return DataRow(cells: [
+              DataCell(Text(fullName)),
+              DataCell(Text(email)),
+              DataCell(Text(phone)),
+            ]);
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  // Fetch profile information from Firestore
+  Future<void> fetchProfile(String profileId) async {
+    setState(() {
+      isLoadingProfile = true;
+    });
+
+    try {
+      final profile = await widget.adminRepository.fetchProfile(profileId, widget.idToken);
+      if (!mounted) return;
+      setState(() {
+        selectedProfileInfo = profile;
+        isLoadingProfile = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        isLoadingProfile = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tải thông tin gia đình: $e')),
+      );
+    }
   }
 
   // Build residents list with edit and delete functionality
@@ -633,6 +844,13 @@ class _ResidentsTabState extends State<ResidentsTab> {
                               if (sortCriteria != null) {
                                 sortResidents(sortCriteria!);
                               }
+
+                              // If the deleted resident was selected, reset selection
+                              if (selectedRoomInfo != null && _getStringValue(selectedRoomInfo!, 'profileId') == _getStringValue(fields, 'profileId')) {
+                                selectedRoomInfo = null;
+                                selectedProfileInfo = null;
+                                isAdditionalInfoVisible = false;
+                              }
                             });
 
                             // Show success message
@@ -701,7 +919,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
                         Flexible(
                           flex: 1,
                           child: Container(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(4.0),
                             child: Column(
                               // Set mainAxisSize to max to fill the available space
                               mainAxisSize: MainAxisSize.max,
@@ -749,7 +967,7 @@ class _ResidentsTabState extends State<ResidentsTab> {
                           thickness: 1,
                           color: Colors.grey,
                         ),
-                        // Right Column: Room Selection
+                        // Right Column: Room Selection and Resident Info
                         Flexible(
                           flex: 1,
                           child: Container(
@@ -838,6 +1056,32 @@ class _ResidentsTabState extends State<ResidentsTab> {
                     );
             },
           );
+  }
+
+  // Helper to decode array of strings from Firestore
+  List<String> _getArrayStringValue(Map<String, dynamic> fields, String key) {
+    List<String> list = [];
+    if (fields.containsKey(key) && fields[key]['arrayValue'] != null && fields[key]['arrayValue']['values'] != null) {
+      for (var item in fields[key]['arrayValue']['values']) {
+        if (item.containsKey('stringValue')) {
+          list.add(item['stringValue']);
+        }
+      }
+    }
+    return list;
+  }
+
+  // Helper to decode array of maps from Firestore
+  List<Map<String, dynamic>> _getArrayMapValue(Map<String, dynamic> fields, String key) {
+    List<Map<String, dynamic>> list = [];
+    if (fields.containsKey(key) && fields[key]['arrayValue'] != null && fields[key]['arrayValue']['values'] != null) {
+      for (var item in fields[key]['arrayValue']['values']) {
+        if (item.containsKey('mapValue') && item['mapValue']['fields'] != null) {
+          list.add(Map<String, dynamic>.from(item['mapValue']['fields']));
+        }
+      }
+    }
+    return list;
   }
 }
 
