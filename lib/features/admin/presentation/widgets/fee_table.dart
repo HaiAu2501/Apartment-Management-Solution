@@ -7,11 +7,13 @@ import '../../data/fees_repository.dart';
 class FeeTable extends StatefulWidget {
   final FeesRepository feesRepository;
   final String idToken;
+  final VoidCallback onAddFee; // Thêm tham số callback
 
   const FeeTable({
     Key? key,
     required this.feesRepository,
     required this.idToken,
+    required this.onAddFee, // Nhận callback
   }) : super(key: key);
 
   @override
@@ -119,13 +121,24 @@ class FeeTableState extends State<FeeTable> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Thao Tác
+                  // Thao Tác - Biến đổi thành PopupMenuButton
                   Expanded(
                     flex: 1,
-                    child: Text(
-                      columnNames[5],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      onSelected: (value) {
+                        if (value == 'add') {
+                          widget.onAddFee(); // Gọi hàm callback để thêm khoản phí mới
+                        }
+                        // Bạn có thể thêm các tùy chọn khác ở đây nếu cần
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: 'add',
+                          child: Text('Thêm khoản phí mới'),
+                        ),
+                        // Thêm các tùy chọn khác nếu cần
+                      ],
                     ),
                   ),
                 ],

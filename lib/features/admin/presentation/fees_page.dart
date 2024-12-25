@@ -1,9 +1,9 @@
 // lib/features/admin/presentation/fees_page.dart
 
 import 'package:flutter/material.dart';
-import 'widgets/fee_table.dart';
-import 'widgets/fee_form.dart';
-import 'widgets/fee_statistics.dart';
+import 'tabs/finance_tab.dart';
+import 'tabs/fees_tab.dart';
+import 'tabs/donations_tab.dart';
 import '../data/fees_repository.dart';
 import '../../.authentication/data/auth_service.dart';
 import '../../.authentication/presentation/login_page.dart';
@@ -22,9 +22,9 @@ class FeesPage extends StatefulWidget {
   _FeesPageState createState() => _FeesPageState();
 }
 
-class _FeesPageState extends State<FeesPage> {
+class _FeesPageState extends State<FeesPage> with SingleTickerProviderStateMixin {
   late FeesRepository feesRepository;
-  final GlobalKey<FeeTableState> _feeTableKey = GlobalKey<FeeTableState>();
+  late TabController _tabController;
 
   @override
   void initState() {
@@ -34,53 +34,47 @@ class _FeesPageState extends State<FeesPage> {
       apiKey: widget.authService.apiKey,
       projectId: widget.authService.projectId,
     );
+    _tabController = TabController(length: 3, vsync: this);
   }
 
-  void _showFeeForm({String? documentPath}) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(documentPath == null ? 'Thêm Khoản Phí Mới' : 'Chỉnh Sửa Khoản Phí'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: FeeForm(
-              feesRepository: feesRepository,
-              idToken: widget.idToken,
-              documentPath: documentPath,
-            ),
-          ),
-        );
-      },
-    ).then((_) {
-      // Refresh the table after closing the form
-      _feeTableKey.currentState?.refreshFees();
-    });
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const FeeStatistics(), // Thêm widget thống kê ở đây
-            const SizedBox(height: 16),
-            Expanded(
-              child: FeeTable(
-                key: _feeTableKey,
-                feesRepository: feesRepository,
-                idToken: widget.idToken,
-              ),
+      body: Column(
+        children: [
+          // Đặt TabBar ở đầu thân của Scaffold
+          Container(
+            color: Theme.of(context).primaryColor,
+            child: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Thông tin chung'),
+                Tab(text: 'Phí bắt buộc'),
+                Tab(text: 'Khoản đóng góp'),
+              ],
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showFeeForm(),
-        child: const Icon(Icons.add),
-        tooltip: 'Thêm Khoản Phí',
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                FinanceTab(
+                  feesRepository: feesRepository,
+                  authService: widget.authService,
+                  idToken: widget.idToken,
+                ),
+                FeesTab(), // Placeholder cho tab "Phí bắt buộc"
+                DonationsTab(), // Placeholder cho tab "Khoản đóng góp"
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
