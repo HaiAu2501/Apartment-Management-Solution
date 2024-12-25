@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/auth_service.dart';
 import 'login_page.dart';
-import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày tháng
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
@@ -24,21 +24,17 @@ class ResidentInfoPage extends StatefulWidget {
 
 class _ResidentInfoPageState extends State<ResidentInfoPage> {
   final _formKey = GlobalKey<FormState>();
-
-  // Controllers
   final TextEditingController fullNameController = TextEditingController();
-  String selectedGender = 'Nam'; // Mặc định là 'Nam'
+  String selectedGender = 'Nam';
   DateTime? dob;
   final TextEditingController dobController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController idController = TextEditingController();
   final TextEditingController floorController = TextEditingController();
   final TextEditingController apartmentNumberController = TextEditingController();
-
   bool isLoading = false;
   String? message;
 
-  // Hàm xử lý đăng ký và tạo tài liệu trong queue
   Future<void> submitInfo() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -61,26 +57,24 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
     String id = idController.text.trim();
     String floor = floorController.text.trim();
     String apartmentNumber = apartmentNumberController.text.trim();
-    String password = widget.password; // Sử dụng mật khẩu người dùng nhập
+    String password = widget.password;
 
-    // Tạo dữ liệu để gửi lên queue
     Map<String, dynamic> queueData = {
       'fullName': fullName,
       'gender': gender,
-      'dob': dobFormatted, // Định dạng: DD/MM/YYYY
+      'dob': dobFormatted,
       'phone': phone,
       'id': id,
       'floor': int.parse(floor),
       'apartmentNumber': int.parse(apartmentNumber),
       'email': widget.email,
-      'password': password, // Thêm trường password
+      'password': password,
       'role': 'Cư dân',
       'status': 'Chờ duyệt',
-      'requestId': Uuid().v4(), // Tạo requestId làm documentID
+      'requestId': Uuid().v4(),
     };
 
     try {
-      // Tạo document trong collection 'queue'
       bool success = await widget.authService.createQueueDocument(queueData);
 
       if (success) {
@@ -103,7 +97,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
     }
   }
 
-  // Hàm chọn ngày sinh
   Future<void> selectDOB() async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -119,10 +112,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
     }
   }
 
-  // Hàm logout
   Future<void> logout() async {
-    // Thực hiện logout nếu cần (ví dụ: xóa token, dữ liệu cục bộ)
-    // Sau đó chuyển hướng về trang đăng nhập
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage(authService: widget.authService)));
   }
 
@@ -134,7 +124,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
         return Scaffold(
           body: Stack(
             children: [
-              // Nền gradient toàn màn hình
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -144,12 +133,11 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                   ),
                 ),
               ),
-              // Thêm nhiều bong bóng nền hơn
               Positioned(
                 top: -50,
                 left: -50,
                 child: Container(
-                  width: 250, // đường kính của bubble
+                  width: 250,
                   height: 250,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -165,7 +153,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                 bottom: -100,
                 right: -50,
                 child: Container(
-                  width: 200, // đường kính của bubble
+                  width: 200,
                   height: 200,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -181,7 +169,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                 top: 120,
                 right: 50,
                 child: Container(
-                  width: 150, // đường kính của bubble
+                  width: 150,
                   height: 150,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -197,7 +185,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                 bottom: 100,
                 right: 500,
                 child: Container(
-                  width: 300, // đường kính của bubble
+                  width: 300,
                   height: 300,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -209,12 +197,11 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                   ),
                 ),
               ),
-              // Nội dung chính
               Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    width: isMobile ? double.infinity : 800, // Độ rộng tùy theo thiết bị
+                    width: isMobile ? double.infinity : 800,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
@@ -232,13 +219,11 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                         : IntrinsicHeight(
                             child: Row(
                               children: [
-                                // Bên trái: Form nhập thông tin cư dân
                                 Expanded(
                                   flex: 1,
                                   child: buildRegisterForm(),
                                 ),
                                 const SizedBox(width: 32),
-                                // Bên phải: Chào mừng
                                 Expanded(
                                   flex: 1,
                                   child: Container(
@@ -252,7 +237,7 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Align(
-                                      alignment: Alignment.center, // Căn lề trái
+                                      alignment: Alignment.center,
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,7 +261,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                   ),
                 ),
               ),
-              // Hiển thị thông báo khi có lỗi hoặc thông tin
               if (message != null)
                 Positioned(
                   top: 50,
@@ -290,7 +274,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
                     ),
                   ),
                 ),
-              // Hiển thị loading
               if (isLoading)
                 Positioned.fill(
                   child: Container(
@@ -305,7 +288,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
     );
   }
 
-  // Hàm xây dựng form đăng ký
   Widget buildRegisterForm() {
     return Form(
       key: _formKey,
@@ -317,7 +299,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green),
           ),
           const SizedBox(height: 24),
-          // Họ và Tên
           TextFormField(
             controller: fullNameController,
             decoration: InputDecoration(
@@ -333,7 +314,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             },
           ),
           const SizedBox(height: 16),
-          // Giới tính
           DropdownButtonFormField<String>(
             value: selectedGender,
             decoration: InputDecoration(
@@ -357,7 +337,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             },
           ),
           const SizedBox(height: 16),
-          // Ngày sinh (GestureDetector với TextFormField)
           GestureDetector(
             onTap: selectDOB,
             child: AbsorbPointer(
@@ -379,7 +358,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // Số điện thoại
           TextFormField(
             controller: phoneController,
             decoration: InputDecoration(
@@ -395,7 +373,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             },
           ),
           const SizedBox(height: 16),
-          // Số ID
           TextFormField(
             controller: idController,
             decoration: InputDecoration(
@@ -409,7 +386,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             },
           ),
           const SizedBox(height: 16),
-          // Tầng
           TextFormField(
             controller: floorController,
             decoration: InputDecoration(
@@ -420,12 +396,14 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             keyboardType: TextInputType.number,
             validator: (value) {
               if (value == null || value.isEmpty) return 'Vui lòng nhập tầng.';
-              if (int.tryParse(value) == null) return 'Tầng phải là số.';
+              final floor = int.tryParse(value);
+              if (floor == null || floor < 1 || floor > 10) {
+                return 'Tầng phải là số từ 1 đến 10.';
+              }
               return null;
             },
           ),
           const SizedBox(height: 16),
-          // Số căn hộ
           TextFormField(
             controller: apartmentNumberController,
             decoration: InputDecoration(
@@ -436,27 +414,28 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             keyboardType: TextInputType.number,
             validator: (value) {
               if (value == null || value.isEmpty) return 'Vui lòng nhập số căn hộ.';
-              if (int.tryParse(value) == null) return 'Số căn hộ phải là số.';
+              final apartment = int.tryParse(value);
+              if (apartment == null || apartment < 1 || apartment > 20) {
+                return 'Số căn hộ phải là số từ 1 đến 20.';
+              }
               return null;
             },
           ),
           const SizedBox(height: 12),
-          // Thông báo
           if (message != null)
             Text(
               message!,
               style: TextStyle(color: message!.contains('thành công') ? Colors.green : Colors.red),
             ),
           const SizedBox(height: 24),
-          // Nút Gửi Thông Tin với Gradient
           Container(
             width: double.infinity,
             decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color.fromARGB(255, 119, 198, 122), Color.fromARGB(255, 252, 242, 150)]), borderRadius: BorderRadius.circular(8)),
             child: ElevatedButton(
               onPressed: submitInfo,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent, // Nền trong suốt
-                shadowColor: Colors.transparent, // Không bóng đổ
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -467,7 +446,6 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // Nút Quay lại Đăng Nhập với viền gradient và nền trắng
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -475,14 +453,13 @@ class _ResidentInfoPageState extends State<ResidentInfoPage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(2.0), // Độ dày viền
+              padding: const EdgeInsets.all(2.0),
               child: Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6) // Bán kính góc nhỏ hơn để tạo hiệu ứng viền
-                    ),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
                 child: TextButton(
-                  onPressed: logout, // Quay lại trang đăng nhập
+                  onPressed: logout,
                   style: TextButton.styleFrom(
-                    backgroundColor: Colors.white, // Nền trắng
+                    backgroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),

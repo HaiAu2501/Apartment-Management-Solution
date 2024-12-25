@@ -33,7 +33,7 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
   void initState() {
     super.initState();
     // Initialize WeatherApiService with a real API key
-    _weatherService = WeatherApiService(apiKey: 'a00dcc105ffd4cd59aa52809241112'); // Replace with actual API key
+    _weatherService = WeatherApiService(apiKey: '152f1bb7ea9d40608d754333242512'); // Replace with actual API key
     _futureForecast = _weatherService.fetchWeatherForecast(location: widget.location, days: 7);
   }
 

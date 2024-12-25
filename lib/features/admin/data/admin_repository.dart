@@ -289,9 +289,10 @@ class AdminRepository {
       'gender': {'stringValue': gender},
       'id': {'stringValue': id},
       'phone': {'stringValue': phone},
+      'profileId': {'stringValue': '$floor-$apartmentNumber'}
       // 'status' is fixed as "Đã duyệt" and should not be updated here
     };
-
+    String profileId = '$floor-$apartmentNumber';
     // Create the updateMask for the fields being updated
     String updateMask = updatedFields.keys.map((field) => 'updateMask.fieldPaths=$field').join('&');
 
@@ -309,7 +310,33 @@ class AdminRepository {
         'fields': updatedFields,
       }),
     );
+    Map<String, dynamic> profileData = {
+      'householdHead': _encodeField(''), // Initialize as empty string
+      'occupation': _encodeField(''), // Initialize as empty string
+      'emergencyContacts': _encodeField(<String>[]), // Empty array
+      'members': _encodeField(<Map<String, dynamic>>[]), // Empty array
+      'moveInDate': _encodeField(''), // Initialize as empty string
+      'moveOutDate': _encodeField(''), // Initialize as empty string
+      'vehicles': _encodeField(<Map<String, dynamic>>[]), // Empty array
+      'utilities': _encodeField(<String>[]), // Empty array
+    };
 
+    final profileUrl = 'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/profiles/$profileId?key=$apiKey';
+
+    final profileResponse = await http.patch(
+      Uri.parse(profileUrl),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'fields': profileData,
+      }),
+    );
+
+    if (profileResponse.statusCode != 200) {
+      throw Exception('Lỗi khi tạo profile: ${profileResponse.statusCode} ${profileResponse.body}');
+    }
     if (response.statusCode == 200) {
       // Update successful
       return;
