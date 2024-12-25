@@ -41,10 +41,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
       icon: Icons.home_outlined,
     ),
     SidebarItem(
-      text: 'Bảng điều khiển',
-      icon: Icons.dashboard_outlined,
-    ),
-    SidebarItem(
       text: 'Người dùng',
       icon: Icons.person_outline,
     ),
@@ -71,7 +67,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     super.initState();
     _pages = [
       const AdminPage(), // 0: Trang chủ trống
-      const DashboardPage(), // 1: Bảng điều khiển
+      // const DashboardPage(), // 1: Bảng điều khiển
       UsersPage(
         authService: widget.authService,
         idToken: widget.idToken,
@@ -124,7 +120,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   /// Handle sidebar item selection
   void _onSelectItem(int index) {
-    if (index == 6) {
+    if (index == 5) {
       // Logout
       logout();
     } else {

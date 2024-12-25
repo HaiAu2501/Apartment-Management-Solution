@@ -92,12 +92,19 @@ class _FeeFormState extends State<FeeForm> {
     if (_formKey.currentState!.validate() && dueDate != null) {
       _formKey.currentState!.save();
 
+      // Xác định 'commonFee' dựa trên 'frequency'
+      bool commonFee = frequency != 'Không bắt buộc';
+
+      // **Debug:** Kiểm tra giá trị của 'frequency' và 'commonFee'
+      print('Frequency: $frequency');
+      print('CommonFee: $commonFee');
+
       Map<String, dynamic> feeData = {
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'amount': int.parse(_amountController.text.trim()),
         'frequency': frequency,
-        'commonFee': true,
+        'commonFee': commonFee, // Thiết lập 'commonFee' chính xác
         'dueDate': dueDate, // giữ 'dueDate' dưới dạng DateTime
       };
 
@@ -187,6 +194,12 @@ class _FeeFormState extends State<FeeForm> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Vui lòng nhập số tiền';
                   }
+                  if (value.trim().length > 10) {
+                    return 'Số tiền quá lớn';
+                  }
+                  if (value.trim().startsWith('-')) {
+                    return 'Số tiền không thể âm';
+                  }
                   if (int.tryParse(value.trim()) == null) {
                     return 'Số tiền phải là số';
                   }
@@ -203,6 +216,10 @@ class _FeeFormState extends State<FeeForm> {
                 ),
                 items: const [
                   DropdownMenuItem(
+                    value: 'Hàng tuần',
+                    child: Text('Hàng tuần'),
+                  ),
+                  DropdownMenuItem(
                     value: 'Hàng tháng',
                     child: Text('Hàng tháng'),
                   ),
@@ -213,6 +230,18 @@ class _FeeFormState extends State<FeeForm> {
                   DropdownMenuItem(
                     value: 'Hàng năm',
                     child: Text('Hàng năm'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Một lần',
+                    child: Text('Một lần'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Không bắt buộc',
+                    child: Text('Không bắt buộc'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Khác',
+                    child: Text('Khác'),
                   ),
                 ],
                 onChanged: (value) {

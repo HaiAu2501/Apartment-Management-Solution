@@ -79,6 +79,20 @@ class _FeeCardState extends State<FeeCard> {
       return;
     }
 
+    if (_amountController.text.trim().length > 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Số tiền quá lớn.')),
+      );
+      return;
+    }
+
+    if (_amountController.text.trim().startsWith('-')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Số tiền không thể âm.')),
+      );
+      return;
+    }
+
     Map<String, dynamic> updatedData = {
       'name': _nameController.text.trim(),
       'description': _descriptionController.text.trim(),
@@ -340,6 +354,10 @@ class _FeeCardState extends State<FeeCard> {
             ),
             items: const [
               DropdownMenuItem(
+                value: 'Hàng tuần',
+                child: Text('Hàng tuần'),
+              ),
+              DropdownMenuItem(
                 value: 'Hàng tháng',
                 child: Text('Hàng tháng'),
               ),
@@ -351,6 +369,18 @@ class _FeeCardState extends State<FeeCard> {
                 value: 'Hàng năm',
                 child: Text('Hàng năm'),
               ),
+              DropdownMenuItem(
+                value: 'Một lần',
+                child: Text('Một lần'),
+              ),
+              DropdownMenuItem(
+                value: 'Không bắt buộc',
+                child: Text('Không bắt buộc'),
+              ),
+              DropdownMenuItem(
+                value: 'Khác',
+                child: Text('Khác'),
+              )
             ],
             onChanged: (value) {
               setState(() {

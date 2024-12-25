@@ -2,61 +2,80 @@
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../data/fees_repository.dart';
 
-class FeeStatistics extends StatelessWidget {
-  const FeeStatistics({Key? key}) : super(key: key);
+/// Lớp hỗ trợ cho dữ liệu biểu đồ đường
+class LineChartDataPoint {
+  final String month;
+  final double amount;
 
-  // Dữ liệu giả cho biểu đồ tròn
-  final List<_PieChartSectionData> pieChartSections = const [
-    _PieChartSectionData(
-      title: 'Hàng tháng',
-      value: 40,
-      count: 4,
-      color: Colors.blueAccent,
-    ),
-    _PieChartSectionData(
-      title: 'Hàng quý',
-      value: 30,
-      count: 3,
-      color: Colors.greenAccent,
-    ),
-    _PieChartSectionData(
-      title: 'Hàng năm',
-      value: 30,
-      count: 3,
-      color: Colors.orangeAccent,
-    ),
-  ];
+  const LineChartDataPoint({
+    required this.month,
+    required this.amount,
+  });
+}
 
-  // Tổng số lượng phí (dữ liệu giả)
-  final int totalFees = 10;
+class FeeStatistics extends StatefulWidget {
+  final FeesRepository feesRepository;
+  final String idToken;
 
-  // Dữ liệu giả cho biểu đồ đường
-  final List<_LineChartDataPoint> lineChartDataPoints = const [
-    _LineChartDataPoint(month: 'Jan', amount: 500),
-    _LineChartDataPoint(month: 'Feb', amount: 700),
-    _LineChartDataPoint(month: 'Mar', amount: 600),
-    _LineChartDataPoint(month: 'Apr', amount: 800),
-    _LineChartDataPoint(month: 'May', amount: 750),
-    _LineChartDataPoint(month: 'Jun', amount: 900),
-    _LineChartDataPoint(month: 'Jul', amount: 850),
-    _LineChartDataPoint(month: 'Aug', amount: 950),
-    _LineChartDataPoint(month: 'Sep', amount: 1000),
-    _LineChartDataPoint(month: 'Oct', amount: 1100),
-    _LineChartDataPoint(month: 'Nov', amount: 1050),
-    _LineChartDataPoint(month: 'Dec', amount: 1200),
-  ];
+  const FeeStatistics({
+    Key? key,
+    required this.feesRepository,
+    required this.idToken,
+  }) : super(key: key);
+
+  @override
+  _FeeStatisticsState createState() => _FeeStatisticsState();
+}
+
+class _FeeStatisticsState extends State<FeeStatistics> {
+  late Future<Map<String, dynamic>> _statisticsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statisticsFuture = _fetchStatistics();
+  }
+
+  Future<Map<String, dynamic>> _fetchStatistics() async {
+    try {
+      final frequencies = await widget.feesRepository.getFeeFrequencies(widget.idToken);
+      final nearestDueDays = await widget.feesRepository.getNearestFeeDueDays(widget.idToken);
+      return {
+        'frequencies': frequencies,
+        'nearestDueDays': nearestDueDays,
+      };
+    } catch (e) {
+      throw Exception('Failed to fetch statistics: $e');
+    }
+  }
 
   // Hàm tạo các phần của biểu đồ tròn
-  List<PieChartSectionData> getPieSections() {
-    return pieChartSections.map((section) {
+  List<PieChartSectionData> _getPieSections(Map<String, int> frequencies) {
+    final List<String> frequencyLabels = [
+      'Hàng tuần',
+      'Hàng tháng',
+      'Hàng quý',
+      'Hàng năm',
+      'Một lần',
+      'Không bắt buộc',
+      'Khác',
+    ];
+
+    double total = frequencies.values.fold(0, (sum, item) => sum + item);
+
+    return frequencyLabels.map((label) {
+      final value = frequencies[label] ?? 0;
+      final double percentage = total > 0 ? (value / total) * 100 : 0;
+
       return PieChartSectionData(
-        color: section.color,
-        value: section.value,
-        title: '${section.value}%',
-        radius: 50,
+        color: _getFrequencyColor(label),
+        value: percentage,
+        title: percentage > 0 ? '${percentage.toStringAsFixed(1)}%' : '',
+        radius: 40, // Giảm giá trị radius để biểu đồ vừa vặn hơn
         titleStyle: const TextStyle(
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
@@ -65,10 +84,10 @@ class FeeStatistics extends StatelessWidget {
   }
 
   // Hàm tạo dữ liệu cho biểu đồ đường
-  LineChartData getLineChartData() {
+  LineChartData _getLineChartData(List<LineChartDataPoint> dataPoints) {
     List<FlSpot> spots = [];
-    for (int i = 0; i < lineChartDataPoints.length; i++) {
-      spots.add(FlSpot(i.toDouble(), lineChartDataPoints[i].amount));
+    for (int i = 0; i < dataPoints.length; i++) {
+      spots.add(FlSpot(i.toDouble(), dataPoints[i].amount));
     }
 
     return LineChartData(
@@ -77,14 +96,14 @@ class FeeStatistics extends StatelessWidget {
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            getTitlesWidget: bottomTitleWidgets,
+            getTitlesWidget: _bottomTitleWidgets,
           ),
         ),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 40,
-            getTitlesWidget: leftTitleWidgets,
+            getTitlesWidget: _leftTitleWidgetsLineChart,
           ),
         ),
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -121,7 +140,7 @@ class FeeStatistics extends StatelessWidget {
           getTooltipItems: (touchedSpots) {
             return touchedSpots.map((touchedSpot) {
               return LineTooltipItem(
-                'Tháng ${lineChartDataPoints[touchedSpot.spotIndex].month}\n'
+                'Tháng ${_lineChartDataPoints[touchedSpot.spotIndex].month}\n'
                 'Thu nhập: ${touchedSpot.y.toInt()}',
                 const TextStyle(
                   color: Colors.white,
@@ -136,7 +155,7 @@ class FeeStatistics extends StatelessWidget {
   }
 
   // Widget cho các tiêu đề trục X
-  Widget bottomTitleWidgets(double value, TitleMeta meta) {
+  Widget _bottomTitleWidgets(double value, TitleMeta meta) {
     const style = TextStyle(
       color: Colors.black,
       fontSize: 10,
@@ -190,8 +209,8 @@ class FeeStatistics extends StatelessWidget {
     );
   }
 
-  // Widget cho các tiêu đề trục Y
-  Widget leftTitleWidgets(double value, TitleMeta meta) {
+  // Widget cho các tiêu đề trục Y của biểu đồ đường
+  Widget _leftTitleWidgetsLineChart(double value, TitleMeta meta) {
     const style = TextStyle(
       color: Colors.black,
       fontSize: 10,
@@ -200,7 +219,7 @@ class FeeStatistics extends StatelessWidget {
     if (value == 0) {
       text = '0k';
     } else if (value % 200 == 0) {
-      text = '${value ~/ 1000}k';
+      text = '${(value / 1000).toStringAsFixed(1)}k';
     } else {
       return Container();
     }
@@ -210,216 +229,253 @@ class FeeStatistics extends StatelessWidget {
     );
   }
 
+  /// Lấy màu sắc dựa trên tần suất
+  Color _getFrequencyColor(String frequency) {
+    switch (frequency) {
+      case 'Hàng tuần':
+        return Colors.blueAccent;
+      case 'Hàng tháng':
+        return Colors.greenAccent;
+      case 'Hàng quý':
+        return Colors.orangeAccent;
+      case 'Hàng năm':
+        return Colors.purpleAccent;
+      case 'Một lần':
+        return Colors.redAccent;
+      case 'Không bắt buộc':
+        return Colors.tealAccent;
+      case 'Khác':
+      default:
+        return Colors.grey;
+    }
+  }
+
+  /// Lấy nhãn tần suất dựa trên chỉ số cột
+  String _getFrequencyLabel(int index) {
+    const List<String> frequencyLabels = [
+      'Hàng tuần',
+      'Hàng tháng',
+      'Hàng quý',
+      'Hàng năm',
+      'Một lần',
+      'Không bắt buộc',
+      'Khác',
+    ];
+
+    if (index >= 0 && index < frequencyLabels.length) {
+      return frequencyLabels[index];
+    } else {
+      return '';
+    }
+  }
+
+  /// Dữ liệu biểu đồ đường giả định, sẽ thay thế bằng dữ liệu thực nếu cần
+  final List<LineChartDataPoint> _lineChartDataPoints = const [
+    LineChartDataPoint(month: 'Jan', amount: 500),
+    LineChartDataPoint(month: 'Feb', amount: 700),
+    LineChartDataPoint(month: 'Mar', amount: 600),
+    LineChartDataPoint(month: 'Apr', amount: 800),
+    LineChartDataPoint(month: 'May', amount: 750),
+    LineChartDataPoint(month: 'Jun', amount: 900),
+    LineChartDataPoint(month: 'Jul', amount: 850),
+    LineChartDataPoint(month: 'Aug', amount: 950),
+    LineChartDataPoint(month: 'Sep', amount: 1000),
+    LineChartDataPoint(month: 'Oct', amount: 1100),
+    LineChartDataPoint(month: 'Nov', amount: 1050),
+    LineChartDataPoint(month: 'Dec', amount: 1200),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Row chứa biểu đồ tròn và biểu đồ đường
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Biểu đồ tròn với chú thích bổ sung
-            Expanded(
-              flex: 1,
-              child: SizedBox(
-                height: 250, // Đặt chiều cao cố định
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Tiêu đề
-                        Text(
-                          'Phân Bổ Khoản Phí',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueGrey[800],
-                          ),
-                          textAlign: TextAlign.center,
+    return FutureBuilder<Map<String, dynamic>>(
+        future: _statisticsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Lỗi: ${snapshot.error}'));
+          }
+          final data = snapshot.data!;
+          final frequencies = Map<String, int>.from(data['frequencies']);
+          final nearestDueDays = data['nearestDueDays'] as int;
+
+          // Xử lý lời nhắc
+          String reminderText;
+          if (nearestDueDays == -1) {
+            reminderText = 'Không có khoản phí nào sắp đến hạn.';
+          } else if (nearestDueDays == 0) {
+            reminderText = 'Khoản phí gần nhất đến hạn hôm nay.';
+          } else if (nearestDueDays > 0) {
+            reminderText = 'Bạn còn $nearestDueDays ngày nữa để đến hạn khoản phí gần nhất.';
+          } else {
+            reminderText = 'Không có dữ liệu về hạn khoản phí.';
+          }
+
+          return Column(
+            children: [
+              // Row chứa biểu đồ tròn và biểu đồ đường
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Biểu đồ tròn với chú thích bên phải
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox(
+                      height: 250, // Đặt chiều cao cố định
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 8),
-                        // Nội dung chính
-                        Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               // Biểu đồ tròn
                               Expanded(
-                                child: PieChart(
-                                  PieChartData(
-                                    sections: getPieSections(),
-                                    centerSpaceRadius: 30,
-                                    sectionsSpace: 2,
-                                    borderData: FlBorderData(show: false),
+                                flex: 2,
+                                child: AspectRatio(
+                                  aspectRatio: 1, // Đảm bảo biểu đồ tròn giữ tỷ lệ
+                                  child: PieChart(
+                                    PieChartData(
+                                      sections: _getPieSections(frequencies),
+                                      centerSpaceRadius: 30,
+                                      sectionsSpace: 2,
+                                      borderData: FlBorderData(show: false),
+                                      pieTouchData: PieTouchData(
+                                        enabled: true,
+                                        touchCallback: (FlTouchEvent event, PieTouchResponse? pieTouchResponse) {
+                                          // Xử lý touch nếu cần
+                                        },
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              // Chú thích bổ sung
+                              // Chú thích bên phải
                               Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Tổng số khoản phí: $totalFees',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blueGrey[800],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ...pieChartSections.map((section) {
+                                flex: 3,
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: frequencies.entries.map((entry) {
                                       return Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 2.0),
+                                        padding: const EdgeInsets.symmetric(vertical: 4.0),
                                         child: Row(
                                           children: [
                                             Container(
                                               width: 12,
                                               height: 12,
-                                              color: section.color,
+                                              color: _getFrequencyColor(entry.key),
                                             ),
-                                            const SizedBox(width: 4),
+                                            const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                '${section.title}: ${section.count} phí',
-                                                style: const TextStyle(fontSize: 14),
+                                                '${entry.key}: ${entry.value} khoản phí',
+                                                style: const TextStyle(fontSize: 12),
                                               ),
                                             ),
                                           ],
                                         ),
                                       );
                                     }).toList(),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Biểu đồ đường
-            Expanded(
-              flex: 1,
-              child: SizedBox(
-                height: 250, // Đặt chiều cao cố định
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Tiêu đề
-                        Text(
-                          'Thu Nhập Theo Tháng',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueGrey[800],
+                  const SizedBox(width: 16),
+                  // Biểu đồ đường
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox(
+                      height: 250, // Đặt chiều cao cố định
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Tiêu đề
+                              Text(
+                                'Thu Nhập Theo Tháng',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueGrey[800],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              // Nội dung chính
+                              Expanded(
+                                child: LineChart(_getLineChartData(_lineChartDataPoints)),
+                              ),
+                              const SizedBox(height: 8),
+                              // Chú thích
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    color: Colors.purple,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text('Tổng Thu Nhập'),
+                                ],
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
-                        // Nội dung chính
-                        Expanded(
-                          child: LineChart(getLineChartData()),
-                        ),
-                        const SizedBox(height: 8),
-                        // Chú thích
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              color: Colors.purple,
-                            ),
-                            const SizedBox(width: 4),
-                            const Text('Tổng Thu Nhập'),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Nhắc nhở ngày đến hạn
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                color: Colors.redAccent[100],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning,
+                        color: Colors.red,
+                        size: 30,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          reminderText,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // Nhắc nhở ngày đến hạn
-        Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          color: Colors.redAccent[100],
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.warning,
-                  color: Colors.red,
-                  size: 30,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'Bạn còn 10 ngày nữa để đến hạn khoản phí gần nhất.',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
+            ],
+          );
+        });
   }
-}
-
-// Lớp hỗ trợ cho dữ liệu biểu đồ tròn
-class _PieChartSectionData {
-  final String title;
-  final double value; // Giá trị phần trăm
-  final int count; // Số lượng khoản phí
-  final Color color;
-
-  const _PieChartSectionData({
-    required this.title,
-    required this.value,
-    required this.count,
-    required this.color,
-  });
-}
-
-// Lớp hỗ trợ cho dữ liệu biểu đồ đường
-class _LineChartDataPoint {
-  final String month;
-  final double amount;
-
-  const _LineChartDataPoint({
-    required this.month,
-    required this.amount,
-  });
 }
