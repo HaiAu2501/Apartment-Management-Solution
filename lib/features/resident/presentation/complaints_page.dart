@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'dart:math';
+import 'dart:math';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import '../domain/r_complaints.dart';
 import 'package:intl/intl.dart';
@@ -88,6 +88,8 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
       String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(now);
       return formattedDate;
     }
+
+
 
     TextEditingController titleAddController = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
@@ -211,7 +213,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                     date: convertTime(),
                     id: '123',
                     isFlagged: false,
-                    bgColor:complaints.isEmpty?Colors.green: complaints[0].bgColor);
+                    bgColor:complaints.isEmpty?generateRandomColor(): complaints[0].bgColor);
                 _addComplaint(complaintData, newComplaint);
                 Navigator.pop(context); // Thực hiện logic, rồi đóng dialog
               },
@@ -222,6 +224,18 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
       },
     );
   }
+  final List<Color> colorPalette = [
+        const Color(0xffd69ca5),
+        const Color(0xff94c8d4),
+        const Color(0xffd696c0),
+        const Color(0xffa6e9ed),
+        const Color(0xff9ad29a),
+        const Color(0xffcecccb)
+      ];
+  Color generateRandomColor() {    
+        final randomColor = colorPalette[Random().nextInt(colorPalette.length)];
+        return randomColor;
+      }
 
   @override
   void initState() {

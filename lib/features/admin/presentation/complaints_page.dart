@@ -46,6 +46,16 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
     uid = await authService.getUserUid(idToken!);
   }
 
+  void sortComplaintsByDate({bool descending = true}) {
+  complaints.sort((a, b) {
+    if (descending) {
+      return b.date.compareTo(a.date); // Mới nhất trước
+    } else {
+      return a.date.compareTo(b.date); // Cũ nhất trước
+    }
+  });
+}
+
   void toggleSelectAllButton() {
     if (chosenList.isEmpty) {
       for (Complaint c in complaints) {
@@ -76,7 +86,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
     );
     getUidAndIdtoken();
     _fetchComplaints();
-
+   
   }
 
   @override
@@ -106,6 +116,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
       if (mounted) {
         setState(() {
           complaints = complaintsFetched;
+           sortComplaintsByDate();
           _isLoading = false;
         });
       }
