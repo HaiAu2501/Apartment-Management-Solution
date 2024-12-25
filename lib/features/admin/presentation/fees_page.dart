@@ -5,6 +5,7 @@ import 'tabs/finance_tab.dart';
 import 'tabs/fees_tab.dart';
 import 'tabs/donations_tab.dart';
 import '../data/fees_repository.dart';
+import '../data/table_repository.dart';
 import '../../.authentication/data/auth_service.dart';
 import '../../.authentication/presentation/login_page.dart';
 
@@ -24,6 +25,7 @@ class FeesPage extends StatefulWidget {
 
 class _FeesPageState extends State<FeesPage> with SingleTickerProviderStateMixin {
   late FeesRepository feesRepository;
+  late TableRepository tableRepository;
   late TabController _tabController;
 
   @override
@@ -31,6 +33,10 @@ class _FeesPageState extends State<FeesPage> with SingleTickerProviderStateMixin
     super.initState();
     // Khởi tạo FeesRepository sử dụng apiKey và projectId từ authService
     feesRepository = FeesRepository(
+      apiKey: widget.authService.apiKey,
+      projectId: widget.authService.projectId,
+    );
+    tableRepository = TableRepository(
       apiKey: widget.authService.apiKey,
       projectId: widget.authService.projectId,
     );
@@ -69,8 +75,16 @@ class _FeesPageState extends State<FeesPage> with SingleTickerProviderStateMixin
                   authService: widget.authService,
                   idToken: widget.idToken,
                 ),
-                FeesTab(), // Placeholder cho tab "Phí bắt buộc"
-                DonationsTab(), // Placeholder cho tab "Khoản đóng góp"
+                FeesTab(
+                  tableRepository: tableRepository,
+                  authService: widget.authService,
+                  idToken: widget.idToken,
+                ), // Placeholder cho tab "Phí bắt buộc"
+                DonationsTab(
+                  tableRepository: tableRepository,
+                  authService: widget.authService,
+                  idToken: widget.idToken,
+                ), // Placeholder cho tab "Khoản đóng góp"
               ],
             ),
           ),

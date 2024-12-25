@@ -392,6 +392,7 @@ class FeesRepository {
         rooms.add({
           'Số tiền đóng': 0, // Khởi tạo giá trị là 0
           'Ngày đóng': null, // Khởi tạo giá trị là null
+          'Người đóng': null, // Khởi tạo giá trị là null
         });
       }
       floors[floorName] = rooms;
