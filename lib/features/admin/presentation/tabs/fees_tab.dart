@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import 'dart:io';
 import '../../data/table_repository.dart';
 import '../../../.authentication/data/auth_service.dart';
 
@@ -151,93 +152,127 @@ class _FeesTabState extends State<FeesTab> {
 
   /// Tải file CSV
   Future<void> _showCSVUpload() async {
+    print(">>> _showCSVUpload() called");
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
       );
-      if (result != null && result.files.single.bytes != null) {
-        final bytes = result.files.single.bytes!;
-        final csvString = utf8.decode(bytes);
-        final csvTable = CsvToListConverter().convert(csvString);
 
-        List<RoomData> parsedData = [];
-        for (var row in csvTable) {
-          if (row.length < 4) continue;
-          final roomNumber = int.tryParse(row[0].toString()) ?? 0;
-          final paidAmount = int.tryParse(row[1].toString()) ?? 0;
-          final paymentDateStr = row[2].toString();
-          final payerStr = row[3].toString();
+      if (result == null) {
+        print("User canceled file picker");
+        return;
+      }
+      if (result.files.isEmpty) {
+        print("No files selected");
+        return;
+      }
 
-          if (roomNumber < 1 || roomNumber > 20) continue;
+      final filePath = result.files.single.path;
+      if (filePath == null) {
+        print("No valid filePath");
+        return;
+      }
 
-          DateTime? paymentDate;
-          try {
-            final parts = paymentDateStr.split('/');
-            if (parts.length == 3) {
-              final day = int.parse(parts[0]);
-              final month = int.parse(parts[1]);
-              final year = int.parse(parts[2]);
-              paymentDate = DateTime(2000 + year, month, day);
-            }
-          } catch (_) {
-            paymentDate = null;
+      // Desktop: read bytes from path
+      final bytes = await File(filePath).readAsBytes();
+      final csvString = utf8.decode(bytes);
+
+      print("CSV content: $csvString"); // debug
+      final csvTable = CsvToListConverter().convert(csvString);
+      print("csvTable: $csvTable"); // debug
+
+      // parse
+      List<RoomData> parsedData = [];
+      for (var row in csvTable) {
+        if (row.length < 4) continue;
+        final rNum = int.tryParse(row[0].toString()) ?? 0;
+        final paid = int.tryParse(row[1].toString()) ?? 0;
+        final dateStr = row[2].toString();
+        final payerStr = row[3].toString();
+        if (rNum < 1 || rNum > 20) continue;
+
+        // parse date
+        DateTime? dt;
+        try {
+          final parts = dateStr.split('/');
+          if (parts.length == 3) {
+            final day = int.parse(parts[0]);
+            final month = int.parse(parts[1]);
+            var year = int.parse(parts[2]);
+            if (year < 100) year += 2000;
+            dt = DateTime(year, month, day);
           }
-
-          parsedData.add(RoomData(
-            roomNumber: roomNumber,
-            paidAmount: paidAmount,
-            paymentDate: paymentDate != null ? _formatDate(paymentDate) : 'Chưa đóng',
-            payer: payerStr.isNotEmpty ? payerStr : 'Không có',
-          ));
+        } catch (e) {
+          print("Error parsing date $dateStr => $e");
         }
 
-        if (parsedData.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('File CSV không hợp lệ hoặc không có dữ liệu.')),
-          );
-          return;
-        }
+        parsedData.add(RoomData(
+          roomNumber: rNum,
+          paidAmount: paid,
+          paymentDate: (dt != null) ? _formatDate(dt) : 'Chưa đóng',
+          payer: payerStr.isNotEmpty ? payerStr : 'Không có',
+        ));
+      }
 
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: Text("Xác nhận cập nhật"),
-            content: Text("Bạn có chắc chắn muốn cập nhật dữ liệu từ file CSV?"),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Hủy")),
-              TextButton(onPressed: () => Navigator.pop(context, true), child: Text("Đồng ý")),
-            ],
-          ),
+      if (parsedData.isEmpty) {
+        print("No valid rows in CSV => stop");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('File CSV không hợp lệ hoặc không có dữ liệu.')),
+        );
+        return;
+      }
+
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Xác nhận cập nhật"),
+          content: Text("Bạn có chắc chắn muốn cập nhật dữ liệu từ file CSV?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text("Hủy"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text("Đồng ý"),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) {
+        print("User canceled CSV update");
+        return;
+      }
+
+      // Thực hiện update
+      setState(() => isLoading = true);
+      try {
+        await widget.tableRepository.updateRoomsData(
+          'fees-table',
+          selectedFee!,
+          selectedFloor!,
+          parsedData,
+          widget.idToken,
         );
 
-        if (confirm == true) {
-          setState(() {
-            isLoading = true;
-            errorMessage = '';
-          });
-          try {
-            await widget.tableRepository.updateRoomsData(
-              'fees-table',
-              selectedFee!,
-              selectedFloor!,
-              parsedData,
-              widget.idToken,
-            );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Cập nhật dữ liệu thành công.')),
-            );
-            _fetchRoomData();
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Lỗi khi cập nhật dữ liệu: $e')),
-            );
-          } finally {
-            setState(() => isLoading = false);
-          }
-        }
+        print("Update CSV success");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Cập nhật dữ liệu thành công.')),
+        );
+
+        _fetchRoomData(); // load lại
+      } catch (e) {
+        print("Update CSV error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi cập nhật dữ liệu: $e')),
+        );
+      } finally {
+        setState(() => isLoading = false);
       }
     } catch (e) {
+      print("showCSVUpload unknown error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi tải file: $e')),
       );
